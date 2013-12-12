@@ -76,7 +76,7 @@
     <module>opendaylight/sal/networkconfiguration/implementation</module>
 
     <!-- md-sal -->
-    <module>opendaylight/md-sal</module>
+    <!--<module>opendaylight/md-sal</module> -->
     <!-- config -->
     <module>opendaylight/config</module>
     <!-- netconf -->
