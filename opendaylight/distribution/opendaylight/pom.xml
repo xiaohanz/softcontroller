@@ -584,6 +584,16 @@
     </dependency>
     <dependency>
       <groupId>org.opendaylight.controller</groupId>
+      <artifactId>firewall</artifactId>
+      <version>${controller.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.opendaylight.controller</groupId>
+      <artifactId>firewall.implementation</artifactId>
+      <version>${controller.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.opendaylight.controller</groupId>
       <artifactId>forwardingrulesmanager</artifactId>
       <version>${forwardingrulesmanager.version}</version>
     </dependency>
@@ -715,6 +725,11 @@
     <dependency>
       <groupId>org.opendaylight.controller</groupId>
       <artifactId>flowprogrammer.northbound</artifactId>
+      <version>${controller.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.opendaylight.controller</groupId>
+      <artifactId>firewall.northbound</artifactId>
       <version>${controller.version}</version>
     </dependency>
     <dependency>
