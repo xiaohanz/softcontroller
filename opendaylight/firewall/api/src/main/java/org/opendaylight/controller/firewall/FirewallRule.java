@@ -16,9 +16,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import org.opendaylight.controller.forwardingrulesmanager.FlowEntry;
+import org.opendaylight.controller.hosttracker.hostAware.HostNodeConnector;
 import org.opendaylight.controller.sal.action.Action;
-import org.opendaylight.controller.sal.action.Drop;
-import org.opendaylight.controller.sal.action.Output;
 import org.opendaylight.controller.sal.core.Node;
 import org.opendaylight.controller.sal.core.NodeConnector;
 import org.opendaylight.controller.sal.flowprogrammer.Flow;
@@ -42,23 +41,25 @@ import org.slf4j.LoggerFactory;
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
 public class FirewallRule implements Serializable{
-//    private IfIptoHost hostTracker;
-    ConcurrentMap<String, FirewallRule> firewallRules;
-    public static String maxRuleNo="4000";
-    private static final String NAMEREGEX = "^[a-zA-Z0-9]+$";
     private static final long serialVersionUID = 1L;
-    public static final String STATICFLOWGROUP = "__StaticFlows__";
-    public static final String INTERNALSTATICFLOWGROUP = "__InternalStaticFlows__";
-    public static final String INTERNALSTATICFLOWBEGIN = "__";
-    public static final String INTERNALSTATICFLOWEND = "__";
-    private String status;
+    //    private IfIptoHost hostTracker;
+    ConcurrentMap<String, FirewallRule> firewallRules;
+    public static String maxRuleNo="65535";
+    private static final String NAMEREGEX = "^[a-zA-Z0-9]+$";
+    private HostNodeConnector transHost;
     private static final Logger log = LoggerFactory.getLogger(FirewallRule.class);
+    private String ruleId;
     private String InstallHw;
+    @XmlElement
+    private String description;
+    @XmlElement
+    private String id;
     @XmlElement
     private String name;
     @XmlElement
     private String priority;
     @XmlElement
+    //string nodeid
     private Node node;
     @XmlElement
     private String ingressPort;
@@ -80,16 +81,22 @@ public class FirewallRule implements Serializable{
     private String tpDst;
     @XmlElement
     private String action;
+    @XmlElement
+    private String status;
+    //status define firewall rule disabled or enabled
+    //string decription
     public FirewallRule() {
     }
 
-    public FirewallRule(String InstallHw, String name, String priority,
+    public FirewallRule(String InstallHw, String id,String name, String description, String priority,
             Node node, String ingressPort, String etherType, String dlSrc,
             String dlDst, String nwSrc, String nwDst, String protocol,
-            String tpSrc, String tpDst, String action) {
+            String tpSrc, String tpDst, String action, HostNodeConnector transHost) {
         super();
         this.InstallHw = InstallHw;
+        this.id = id;
         this.name = name;
+        this.description = description;
         this.priority = priority;
         this.node = node;
         this.ingressPort = ingressPort;
@@ -102,10 +109,12 @@ public class FirewallRule implements Serializable{
         this.tpSrc = tpSrc;
         this.tpDst = tpDst;
         this.action = action;
-        this.status = StatusCode.SUCCESS.toString();
+        this.transHost=transHost;
     }
     public FirewallRule(FirewallRule rules) {
+        this.id=rules.id;
         this.name = rules.name;
+        this.description=rules.description;
         this.node = rules.node;
         this.priority = rules.priority;
         this.ingressPort = rules.ingressPort;
@@ -119,6 +128,15 @@ public class FirewallRule implements Serializable{
         this.tpDst = rules.tpDst;
         this.action = rules.action;
     }
+    public HostNodeConnector getTransHost() {
+        return transHost;
+    }
+    public String getDescription() {
+        return description;
+    }
+    public String getId() {
+        return id;
+    }
     public String getStatus() {
         return status;
     }
@@ -127,6 +145,9 @@ public class FirewallRule implements Serializable{
     }
     public String getName() {
         return name;
+    }
+    public String getRuleId() {
+        return ruleId;
     }
     public String getPriority() {
         return priority;
@@ -180,14 +201,26 @@ public class FirewallRule implements Serializable{
     public String getTpDst() {
         return tpDst;
     }
-    public String getActions() {
+    public String getAction() {
         return action;
     }
-    public void setStatus(String status) {
-        this.status = status;
+    public void setTransHost(HostNodeConnector transHost) {
+        this.transHost = transHost;
     }
     public void setInstallHw(String InstallHw) {
         this.InstallHw = InstallHw;
+    }
+    public void setDescription(String description) {
+        this.description=description;
+    }
+    public void setId(String id) {
+        this.id=id;
+    }
+    public void setRuleId(String ruleId) {
+        this.ruleId=ruleId;
+    }
+    public void setStatus(String status) {
+        this.status=status;
     }
     public void setName(String name) {
         this.name = name;
@@ -228,12 +261,9 @@ public class FirewallRule implements Serializable{
     public void setActions(String action) {
         this.action = action;
     }
-    public boolean isStatusSuccessful() {
-        return status.equals(StatusCode.SUCCESS.toString());
-    }
     @Override
     public String toString() {
-        return "FirewallRule [status=" + status + ",InstallHw=" + InstallHw + ", name=" + name
+        return "FirewallRule [ruleId=" + ruleId + ",id=" + id + ",transHost=" + transHost + ",InstallHw=" + InstallHw + ", description=" + description + ", name=" + name
                 + ", priority=" + priority + ", node=" + node
                 + ", ingressPort=" + ingressPort + ", etherType=" + etherType
                 + ", dlSrc=" + dlSrc + ", dlDst=" + dlDst + ", nwSrc=" + nwSrc
@@ -244,6 +274,9 @@ public class FirewallRule implements Serializable{
     public int hashCode() {
         final int prime = 31;
         int result = 1;
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + ((description == null) ? 0 : description.hashCode());
+        result = prime * result + ((ruleId == null) ? 0 : ruleId.hashCode());
         result = prime * result + ((action == null) ? 0 : action.hashCode());
         result = prime * result + ((dlDst == null) ? 0 : dlDst.hashCode());
         result = prime * result + ((dlSrc == null) ? 0 : dlSrc.hashCode());
@@ -260,6 +293,7 @@ public class FirewallRule implements Serializable{
         result = prime * result
                 + ((protocol == null) ? 0 : protocol.hashCode());
         result = prime * result + ((InstallHw == null) ? 0 : InstallHw.hashCode());
+        result = prime * result + ((transHost == null) ? 0 : transHost.hashCode());
         result = prime * result + ((tpDst == null) ? 0 : tpDst.hashCode());
         result = prime * result + ((tpSrc == null) ? 0 : tpSrc.hashCode());
         return result;
@@ -339,7 +373,7 @@ public class FirewallRule implements Serializable{
     private enum EtherIPType {
         ANY, V4, V6;
     };
-    private enum ActionType {
+    public enum ActionType {
         ALLOW,DENY,DISPATCH;
     };
     public boolean isPortValid(Short port) {
@@ -370,7 +404,6 @@ public class FirewallRule implements Serializable{
         int port = Integer.decode(tpPort);
         return ((port >= 0) && (port <= 0xffff));
     }
-//    public Status validate(IContainer container) {
     public Status validate() {
         EtherIPType etype = EtherIPType.ANY;
         EtherIPType ipsrctype = EtherIPType.ANY;
@@ -469,7 +502,7 @@ public class FirewallRule implements Serializable{
             if (action == null) {
                 return new Status(StatusCode.BADREQUEST, "Action value is null or empty");
             }else{
-                if(action.startsWith("DISPATCH")||action.startsWith("dispatch")){
+                if(action.startsWith("DISPATCH")){
                     String dst=action.substring(action.indexOf(":")+1);
                     if (dst==null){
                         return new Status(StatusCode.BADREQUEST, String.format("dispatch destnation is null or empty"));
@@ -479,7 +512,7 @@ public class FirewallRule implements Serializable{
                                     dst));
                         }
                     }
-                }else if(!action.equalsIgnoreCase("allow")&&!action.equalsIgnoreCase("deny")){
+                }else if(!action.equals("ALLOW")&&!action.equals("DENY")){
                     return new Status(StatusCode.BADREQUEST,String.format("Action value %s is not valid", action));
                 }
             }
@@ -538,25 +571,6 @@ public class FirewallRule implements Serializable{
         }
         List<Action> actionList = new ArrayList<Action>();
         Flow flow = new Flow(match, actionList);
-        Matcher sstr;
-        sstr = Pattern.compile(ActionType.DENY.toString()).matcher(this.action);
-        if (sstr.matches()) {
-            actionList.add(new Drop());
-        }
-        else {
-            sstr= Pattern.compile(ActionType.DISPATCH + ":(.*)").matcher(this.action);
-            if (sstr.matches()) {
-                for (String t : sstr.group(1).split(",")) {
-                    Matcher n = Pattern.compile("(?:(\\d+))").matcher(t);
-                    if (n.matches()) {
-                        if (n.group(1) != null) {
-                            short ofPort = Short.parseShort(n.group(1));
-                            actionList.add(new Output(NodeConnectorCreator.createOFNodeConnector(ofPort,this.getNode())));
-                        }
-                    }
-                }
-            }
-        }
         flow.setMatch(match);
         flow.setActions(actionList);
         if (this.priority != null) {
@@ -564,17 +578,11 @@ public class FirewallRule implements Serializable{
         }
         return flow;
     }
-    public boolean isInternalRule() {
-        return (this.name != null &&
-                this.name.startsWith(FirewallRule.INTERNALSTATICFLOWBEGIN) &&
-                this.name.endsWith(FirewallRule.INTERNALSTATICFLOWEND));
-    }
     public FlowEntry changeToFlow(Packet formattedPak, NodeConnector incoming_connector){
-            String group = this.isInternalRule() ? FirewallRule.INTERNALSTATICFLOWGROUP : FirewallRule.STATICFLOWGROUP;
-            group="FirewallRule";
+            String group="FirewallRule";
             Random rd=new Random();
             String str=String.valueOf(rd.nextInt(512));
-            String name=this.name+"_"+str;
+            String name=this.ruleId+"_"+str;
             return new FlowEntry(group, name, this.getFlow(formattedPak), incoming_connector.getNode());
     }
     public boolean equalToRule(Packet pak,NodeConnector nodeConnector) {
@@ -585,6 +593,34 @@ public class FirewallRule implements Serializable{
         String srcMac=String.valueOf(BitBufferHelper.toNumber(sMac));
         String dstMac=String.valueOf(BitBufferHelper.toNumber(dMac));
         String etherType=EtherTypes.getEtherTypeName(eHeader.getEtherType());
+        String rdlSrc="";
+        String rdlDst="";
+        if (this.dlSrc!=null){
+            String dSrc=this.getDlSrc().trim();
+            if(dSrc!=null&&!rdlSrc.equals(dSrc)){
+                for(int i=0;i<dSrc.length();i++){
+                    if(dSrc.charAt(i)>48&&dSrc.charAt(i)<=57){
+                        rdlSrc+=dSrc.charAt(i);
+                    }
+                }
+            }
+            if (!rdlSrc.equals(srcMac)){
+                return false;
+            }
+        }
+        if (this.dlDst!=null){
+            String dDst=this.getDlDst().trim();
+            if(dDst!=null&&!rdlDst.equals(dDst)){
+                for(int i=0;i<dDst.length();i++){
+                    if(dDst.charAt(i)>48&&dDst.charAt(i)<=57){
+                        rdlDst+=dDst.charAt(i);
+                    }
+                }
+            }
+            if (!rdlDst.equals(dstMac)){
+                return false;
+            }
+        }
         //get src/dst ip,nw protocol
         IPv4 pkt = (IPv4)pak.getPayload();
         String protocol = IPProtocols.getProtocolName(pkt.getProtocol());
@@ -607,41 +643,58 @@ public class FirewallRule implements Serializable{
             dstPort = String.valueOf(udpFrame.getDestinationPort());
         }else if(protocol.equals(IPProtocols.ICMP.toString())){
         }
+        //get dispatch host ip mac
+        boolean flag=false;
+/**        HostNodeConnector tHost=this.getTransHost();
+        byte[] tMac=null;
+        InetAddress tIp=null;
+        if (tHost!=null){
+            tMac=tHost.getDataLayerAddressBytes();
+            tIp=tHost.getNetworkAddress();
+            //compare with dipatch host if exist
+            //compare tHost with
+            if (tMac.equals(sMac)&&tIp.equals(srcIp.getHostAddress())){
+                flag=true;
+                if (this.dlSrc!=null&&!(rdlSrc.equals(dstMac))){
+                    flag=false;
+                }else{
+                    if (this.nwSrc!=null&&!(this.nwSrc.equals(dstIp.getHostAddress()))){
+                        flag=false;
+                    }
+                }
+            }else{
+                flag=false;
+            }
+            //compare with dipatch host if exist
+            if (tMac.equals(sMac)&&tIp.equals(srcIp.getHostAddress())){
+                flag=true;
+                if (this.dlSrc!=null&&!(rdlSrc.equals(dstMac))){
+                    flag=false;
+                }else{
+                    if (this.nwSrc!=null&&!(this.nwSrc.equals(dstIp.getHostAddress()))){
+                        flag=false;
+                    }
+                }
+            }else{
+                flag=false;
+            }
+        }**/
         //change pkt to pktRule
-        FirewallRule pktRule=new FirewallRule(null, null, null,
+        FirewallRule pktRule=new FirewallRule(null, null, null, null, null,
             node, nodePort, etherType, srcMac,
             dstMac, srcIp.getHostAddress(), dstIp.getHostAddress(), protocol,
-            srcPort, dstPort, null);
+            srcPort, dstPort, null, null);
         //change rule
-        if (this.dlSrc!=null){
-            String dSrc=this.getDlSrc().trim();
-            String dSrc1="";
-            if(dSrc!=null&&!"".equals(dSrc)){
-                for(int i=0;i<dSrc.length();i++){
-                    if(dSrc.charAt(i)>48&&dSrc.charAt(i)<=57){
-                        dSrc1+=dSrc.charAt(i);
-                    }
-                }
-            }
-            String k=pktRule.getDlSrc();
-            if(!dSrc1.equals(k)){
+        if (flag==false){
+
+    /**        String rnwSrc=this.getNwSrc();
+            String rnwDst=this.getNwDst();
+            if (this.nwSrc!=null&&srcIp.getHostAddress().equals(rnwSrc)){
                 return false;
             }
-        }
-        if (this.dlDst!=null){
-            String dDst=this.getDlDst().trim();
-            String dDst1="";
-            if(dDst!=null&&!"".equals(dDst)){
-                for(int i=0;i<dDst.length();i++){
-                    if(dDst.charAt(i)>48&&dDst.charAt(i)<=57){
-                        dDst1+=dDst.charAt(i);
-                    }
-                }
-            }
-            String k=pktRule.getDlDst();
-            if(!dDst1.equals(k)){
+            if (this.nwDst!=null&&dstIp.getHostAddress().equals(rnwDst)){
                 return false;
-            }
+            }*/
         }
         // compare rule with pktRule
         if (this.etherType==null||pktRule.getEtherType().equals(this.getEtherTypeName()))
