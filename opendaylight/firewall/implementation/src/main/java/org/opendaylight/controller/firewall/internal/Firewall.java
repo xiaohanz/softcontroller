@@ -615,7 +615,7 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
                     dMacConnector=this.mac_to_port_per_switch.get(dHostN).get(dMac_val);
                     if (dMacConnector!=null){
                         actionList.add(new Output(dMacConnector));
-                    }else{                        
+                    }else{
                         return new Status(StatusCode.NOTFOUND);
                     }
                 }else{
