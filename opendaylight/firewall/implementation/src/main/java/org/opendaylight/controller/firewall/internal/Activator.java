@@ -71,7 +71,7 @@ public class Activator extends ComponentActivatorAbstractBase {
             propSet.add(Firewall.FIREWALL_EVENT_CACHE_NAME);
             props.put("cachename", propSet);
             c.setInterface(new String[] {IFirewall.class.getName(), IConfigurationContainerAware.class.getName(),IListenDataPacket.class.getName()},props);
-            }
+        }
         c.add(createContainerServiceDependency(containerName).setService(
                 IClusterContainerServices.class).setCallbacks(
                 "setClusterContainerService",

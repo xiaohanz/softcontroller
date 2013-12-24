@@ -15,7 +15,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+//import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.felix.dm.Component;
 import org.eclipse.osgi.framework.console.CommandProvider;
@@ -26,11 +28,13 @@ import org.opendaylight.controller.clustering.services.IClusterServices;
 import org.opendaylight.controller.configuration.IConfigurationContainerAware;
 import org.opendaylight.controller.firewall.FirewallRule;
 import org.opendaylight.controller.firewall.IFirewall;
+import org.opendaylight.controller.firewall.FirewallRule.ActionType;
 import org.opendaylight.controller.forwardingrulesmanager.FlowEntry;
 import org.opendaylight.controller.forwardingrulesmanager.IForwardingRulesManager;
 import org.opendaylight.controller.hosttracker.IfIptoHost;
 import org.opendaylight.controller.hosttracker.hostAware.HostNodeConnector;
 import org.opendaylight.controller.sal.action.Action;
+import org.opendaylight.controller.sal.action.Drop;
 import org.opendaylight.controller.sal.action.Output;
 import org.opendaylight.controller.sal.core.ConstructionException;
 import org.opendaylight.controller.sal.core.Node;
@@ -66,9 +70,10 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
     private IForwardingRulesManager frm;
     private IfIptoHost hostTracker;
     private ExecutorService executor;
-    private ISwitchManager switchManager = null;
+    private ISwitchManager switchManager;
     private static Logger log = LoggerFactory.getLogger(FirewallRule.class);
     ConcurrentMap<String,FirewallRule> ruleConfigList;
+    private Map<String,String> id_ruleName=new HashMap<String,String>();
     private IClusterContainerServices clusterContainerService = null;
     private IDataPacketService dataPacketService;
     private Map<Node, Map<Long, NodeConnector>> mac_to_port_per_switch = new HashMap<Node, Map<Long, NodeConnector>>();
@@ -80,35 +85,86 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
     public boolean isEnabled(){
         return enabled;
     }
-    /**实现功能:防火墙状态设置*/
     @Override
     public void setstatus(boolean enabled) {
-    // TODO Auto-generated method stub
         this.enabled=enabled;
     }
     @Override
     public ConcurrentMap<String, FirewallRule> getRuleConfigList() {
         return ruleConfigList;
     }
-    /**
-     *实现功能:添加规则
-     */
     @Override
     public Status addRule(FirewallRule ruleConfig) {
         // rule validate
-        //Status status = ruleConfig.validate(container);
         Status status = ruleConfig.validate();
         if (!status.isSuccess()) {
             log.warn("Invalid Configuration for flow {}. The failure is {}", ruleConfig, status.getDescription());
             String error = "Invalid Configuration (" + status.getDescription() + ")";
-            ruleConfig.setStatus(error);
             return new Status(StatusCode.BADREQUEST, error);
         }
-        return addRuleInternal(ruleConfig, false);
+        int idInt=0;
+/*        if (ruleConfigList.get(ruleConfig.getName()) != null) {
+            return new Status(StatusCode.CONFLICT,
+                    "Firewall Rule with the specified name already exists.");
+        }*/
+        for (Map.Entry<String, FirewallRule> entry : ruleConfigList.entrySet()) {
+            FirewallRule rule=entry.getValue();
+            if (rule.equals(ruleConfig) == true) {
+                return new Status(StatusCode.CONFLICT,
+                        "This conflicts with an existing firewall rule " +
+                                "Configuration. Please check the configuration " +
+                                        "and try again");
+            }
+//            id_ruleName.put(rule.getId(), rule.getName());
+            String entryId=entry.getValue().getId();
+            int ruleIdInteger=Integer.parseInt(entryId);
+            if (ruleIdInteger>idInt){
+                idInt=ruleIdInteger;
+            }
+        }
+        String id=String.valueOf(idInt+1);
+        String ruleId=id+"_"+ruleConfig.getName();
+        ruleConfig.setId(id);
+        ruleConfig.setRuleId(ruleId);
+        ruleConfig.setInstallHw("false");
+        ruleConfigList.put(ruleId, ruleConfig);
+        id_ruleName.put(id, ruleConfig.getName());
+        return new Status(StatusCode.SUCCESS);
     }
-    /**
-     *实现功能:update规则
-     */
+    @Override
+    public String addRuleInternal(FirewallRule ruleConfig) {
+        // rule validate
+        Status status = ruleConfig.validate();
+        if (!status.isSuccess()) {
+            log.warn("Invalid Configuration for flow {}. The failure is {}", ruleConfig, status.getDescription());
+            return "0";
+        }
+        int idInt=0;
+/*        if (ruleConfigList.get(ruleConfig.getName()) != null) {
+            return new Status(StatusCode.CONFLICT,
+                    "Firewall Rule with the specified name already exists.");
+        }*/
+        for (Map.Entry<String, FirewallRule> entry : ruleConfigList.entrySet()) {
+            FirewallRule rule=entry.getValue();
+            if (rule.equals(ruleConfig) == true) {
+                return "0";
+            }
+//            id_ruleName.put(rule.getId(), rule.getName());
+            int ruleIdInteger=Integer.parseInt(entry.getKey());
+            if (ruleIdInteger>idInt){
+                idInt=ruleIdInteger;
+            }
+        }
+        String id=String.valueOf(idInt+1);
+        String ruleId=id+"_"+ruleConfig.getName();
+        ruleConfig.setId(id);
+        ruleConfig.setRuleId(ruleId);
+        ruleConfig.setInstallHw("false");
+        ruleConfigList.put(ruleId, ruleConfig);
+        id_ruleName.put(id, ruleConfig.getName());
+        return id;
+    }
+    /*
     @Override
     public Status updateRule(FirewallRule ruleConfig) {
         // rule validate
@@ -117,54 +173,88 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         if (!status.isSuccess()) {
             log.warn("Invalid Configuration for flow {}. The failure is {}", ruleConfig, status.getDescription());
             String error = "Invalid Configuration (" + status.getDescription() + ")";
-            ruleConfig.setStatus(error);
             return new Status(StatusCode.BADREQUEST, error);
         }
-        ruleConfig.setStatus(StatusCode.SUCCESS.toString());
         if (ruleConfigList.get(ruleConfig.getName()) == null) {
-            this.addRule(ruleConfig);
-            return new Status(StatusCode.CONFLICT,
-                    "Firewall Rule with the specified name does not exist,create new one");
+            status=this.addRule(ruleConfig);
+            if (status.isSuccess()){
+                return new Status(StatusCode.SUCCESS,
+                    "Success! New one firewallRule created,because firewall Rule with the specified name does not exist\n");
+            }else{
+                return new Status(StatusCode.INTERNALERROR,
+                    "Firewall Rule with the specified name does not exist,create new one failed\n");
+            }
         }
         return modifyRule(ruleConfig);
-    }
-
+    }*/
     @Override
-    public FirewallRule getFirewallRule(String name) {
-    // TODO Auto-generated method stub
+    public Status updateRule(String id,FirewallRule ruleConfig) {
+        // rule validate
+        //Status status = ruleConfig.validate(container);
+        Status status = ruleConfig.validate();
+        if (!status.isSuccess()) {
+            log.warn("Invalid Configuration for flow {}. The failure is {}", ruleConfig, status.getDescription());
+            String error = "Invalid Configuration (" + status.getDescription() + ")";
+            return new Status(StatusCode.BADREQUEST, error);
+        }
+        FirewallRule mapRule=this.getFirewallRule(id);
+        if (mapRule == null) {
+            return new Status(StatusCode.BADREQUEST,"No such firewall rule\n");
+        }
+        if (!mapRule.getId().equals(id)){
+            return new Status(StatusCode.BADREQUEST,"modified rule id is not equal with id\n");
+        }
+        String ruleName=id_ruleName.get(id);
+        String ruleId=id+"_"+ruleName;
+        if(this.removeFirewallRule(id).isSuccess()){
+            ruleConfig.setId(id);
+            ruleConfig.setInstallHw("false");
+            ruleConfigList.put(ruleId, ruleConfig);
+            id_ruleName.put(id, ruleConfig.getName());
+            return new Status(StatusCode.SUCCESS,"Success! FirewallRule modifid\n");
+        }
+        return new Status(StatusCode.INTERNALERROR,"modify rule failed\n");
+    }
+    @Override
+    public FirewallRule getFirewallRule(String id) {
         for (Entry<String, FirewallRule> firewallRule : ruleConfigList.entrySet()) {
             FirewallRule rule = firewallRule.getValue();
-            if (rule.getName().equals(name)) {
+            if (rule.getId().equals(id)) {
                 return rule;
             }
         }
         return null;
     }
     @Override
-    public Status removeFirewallRule(String name,FirewallRule mapRule) {
-        // TODO Auto-generated method stub
+    public Status removeFirewallRule(String id) {
         Status status=new Status(StatusCode.SUCCESS);
-        if(mapRule!=null){
-            ruleConfigList.remove(mapRule.getName());
-            if(mapRule.getInstallHw().equalsIgnoreCase("true")){
-                List<FlowEntry> flowEntry=frm.getFlowEntriesForGroup("FirewallRule");
-                if(flowEntry!=null){
-                    for (FlowEntry entry : flowEntry){
-                        String fName=entry.getFlowName();
-                        if(fName.startsWith(name+"_")){
-                            status =frm.uninstallFlowEntry(entry);
-                        }
+        FirewallRule mapRule = this.getFirewallRule(id);
+        if (mapRule == null) {
+            return new Status(StatusCode.NOTFOUND,"ID"+id+"firewall rule does not exist");
+        }
+        String ruleName=id_ruleName.get(id);
+        String ruleId=id+"_"+ruleName;
+        ruleConfigList.remove(ruleId);
+        id_ruleName.remove(id);
+        String installHw=mapRule.getInstallHw();
+        if(installHw!=null&&installHw.equalsIgnoreCase("true")){
+            List<FlowEntry> flowEntry=frm.getFlowEntriesForGroup("FirewallRule");
+            if(flowEntry!=null){
+                for (FlowEntry entry : flowEntry){
+                    String fName=entry.getFlowName();
+                    if(fName.startsWith(ruleId+"_")){
+                        status =frm.uninstallFlowEntry(entry);
                     }
-                }else{
-                    log.info("flowentry list is null");
-                    status= new Status(StatusCode.NOTFOUND);
                 }
+            }else{
+                log.info("flowentry list is null");
+                status= new Status(StatusCode.NOTFOUND);
             }
         }
         if(!status.isSuccess()){
-            ruleConfigList.put(mapRule.getName(), mapRule);
+            ruleConfigList.put(ruleId, mapRule);
+            id_ruleName.put(id, mapRule.getName());
         }
-        //List<FlowEntry> flowEntry1=frm.getFlowEntriesForGroup("FirewallRule");
         return status;
     }
     @Override
@@ -176,34 +266,46 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         return retS;
     }
     @Override
+    public String getRuleName_Id(String ruleName){
+        String ids="";
+        String idset=",null";
+        for(Entry<String,String> entry:id_ruleName.entrySet()){
+            if (entry.getValue().equals(ruleName)){
+                idset=ids+","+entry.getKey();
+                ids=idset;
+            }
+        }
+        idset=idset.substring(1);
+        return idset;
+    }
+    @Override
+    public Map<String,String> getRuleName_Ids(){
+        Map<String,String> ruleName_ids=new HashMap<String,String>();
+        String ruleName=null;
+        String idset="";
+        for(Entry<String,String> entry:id_ruleName.entrySet()){
+            ruleName=entry.getValue();
+            if(ruleName_ids.get(ruleName)==null){
+                ruleName_ids.put(ruleName, entry.getKey());
+            }else{
+                idset=ruleName_ids.get(ruleName)+","+entry.getKey();
+                ruleName_ids.put(ruleName, idset);
+            }
+        }
+        return ruleName_ids;
+    }
+    @Override
     public Status saveConfiguration() {
         return saveFirewallRule();
     }
-    private Status addRuleInternal(FirewallRule ruleConfig, boolean isAdding) {
-        ruleConfig.setStatus(StatusCode.SUCCESS.toString());
-        if (ruleConfigList.get(ruleConfig.getName()) != null) {
-            return new Status(StatusCode.CONFLICT,
-                    "Firewall Rule with the specified name already exists.");
-        }
-        for (Map.Entry<String, FirewallRule> entry : ruleConfigList.entrySet()) {
-            if (entry.getValue().equals(ruleConfig) == true) {
-                return new Status(StatusCode.CONFLICT,
-                        "This conflicts with an existing firewall rule " +
-                                "Configuration. Please check the configuration " +
-                                        "and try again");
-            }
-        }
-        ruleConfig.setInstallHw("false");
-        ruleConfigList.put(ruleConfig.getName(), ruleConfig);
-        return new Status(StatusCode.SUCCESS);
-    }
-    private Status modifyRule(FirewallRule rule) {
-    // TODO Auto-generated method stub
+/*    private Status modifyRule(FirewallRule rule) {
        // FirewallRule mRule=ruleConfigList.get(rule.getName());
-        this.removeFirewallRule(rule.getName(),rule);
-        this.addRule(rule);
-        return new Status(StatusCode.SUCCESS);
-    }
+        if(this.removeFirewallRule(rule.getName(),rule).isSuccess())
+            if(this.addRule(rule).isSuccess()){
+                return new Status(StatusCode.SUCCESS,"Success! FirewallRule modifid\n");
+            }
+        return new Status(StatusCode.INTERNALERROR,"modify rule failed\n");
+    }*/
     void setDataPacketService(IDataPacketService s) {
         this.dataPacketService = s;
     }
@@ -213,7 +315,7 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
             this.dataPacketService = null;
         }
     }
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({ })
     private void allocateCaches() {
         if (this.clusterContainerService == null) {
             log.info("un-initialized clusterContainerService, can't create cache");
@@ -309,7 +411,7 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         // Instantiate cluster synced variables
         allocateCaches();
         retrieveCaches();
-        Executors.newFixedThreadPool(1);
+      //  Executors.newFixedThreadPool(1);
         if (ruleConfigList.isEmpty()) {
             loadConfiguration();
         }
@@ -370,9 +472,6 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
                 if (this.mac_to_port_per_switch.get(incoming_node) == null) {
                     this.mac_to_port_per_switch.put(incoming_node, new HashMap<Long, NodeConnector>());
                 }
-                if(srcMAC_val==3){
-                    System.out.println(srcMAC_val);
-                }
                 this.mac_to_port_per_switch.get(incoming_node).put(srcMAC_val, incoming_connector);
                 if (this.enabled!=true){
                     log.trace("Firewall disabled");
@@ -399,54 +498,51 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         return PacketResult.IGNORED;
     }
     private FirewallRule matchWithRule(Packet formattedPak, NodeConnector incoming_connector) {
-        // TODO Auto-generated method stub
          //match with rule
         String priority=FirewallRule.maxRuleNo;
         FirewallRule matched_rule=null;
         for (Entry<String, FirewallRule> firewallRule : ruleConfigList.entrySet()) {
-            boolean rm=true;
             FirewallRule conf = firewallRule.getValue();
-            FirewallRule confcopy=new FirewallRule(conf);
-            Node ruleNode =confcopy.getNode();
+            boolean nodeEqual=true;
+            Node ruleNode =conf.getNode();
             IPv4 pkt = (IPv4)formattedPak.getPayload();
             InetAddress srcIp=NetUtils.getInetAddress(pkt.getSourceAddress());
-            HostNodeConnector sHost=this.hostTracker.hostFind(srcIp);
-            String k=incoming_connector.getNode().getNodeIDString();
+            HostNodeConnector srcHost=this.hostTracker.hostFind(srcIp);
+            String incomingNode=incoming_connector.getNode().getNodeIDString();
             if (ruleNode!=null){
-                if(k.equals(ruleNode.getNodeIDString())){
-                    rm=true;
+                if(incomingNode.equals(ruleNode.getNodeIDString())){
+                    nodeEqual=true;
                 }else{
-                    if (sHost!=null){
-                        NodeConnector sNodeCon=sHost.getnodeConnector();
-                        if (!sNodeCon.getNode().equals(ruleNode)){
-                            rm=false;
+                    if (srcHost!=null){
+                        NodeConnector srcNodeCon=srcHost.getnodeConnector();
+                        if (!srcNodeCon.getNode().equals(ruleNode)){
+                            nodeEqual=false;
                         }else{
-                            rm=true;
+                            nodeEqual=true;
                         }
                     }else{
-                        rm=false;
+                        nodeEqual=false;
                     }
                 }
 
             }
             if (conf.getIngressPort()!=null){
                 if(incoming_connector.getNodeConnectorIDString().equals(conf.getIngressPort())){
-                    rm=true;
+                    nodeEqual=true;
                 }else{
-                    if (sHost!=null){
-                        NodeConnector sNodeCon=sHost.getnodeConnector();
+                    if (srcHost!=null){
+                        NodeConnector sNodeCon=srcHost.getnodeConnector();
                         if (!sNodeCon.getNodeConnectorIDString().equals(conf.getIngressPort())){
-                            rm=false;
+                            nodeEqual=false;
                         }else{
-                            rm=true;
+                            nodeEqual=true;
                         }
                     }else{
-                        rm=false;
+                        nodeEqual=false;
                     }
                 }
-
             }
-            if ((rm==true)&&confcopy.equalToRule(formattedPak,incoming_connector)){
+            if ((nodeEqual==true)&&conf.equalToRule(formattedPak,incoming_connector)){
                 String prio=conf.getPriority();
                 if(Integer.valueOf(prio).intValue()<Integer.valueOf(priority).intValue()){
                     priority=prio;
@@ -459,7 +555,6 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         return matched_rule;
     }
     private NodeConnector getDstMac(RawPacket inPkt, NodeConnector incoming_connector){
-        // TODO Auto-generated method stub
         Packet formattedPak = this.dataPacketService.decodeDataPacket(inPkt);
         Node incoming_node = incoming_connector.getNode();
         byte[] srcMAC = ((Ethernet)formattedPak).getSourceMACAddress();
@@ -478,9 +573,6 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         NodeConnector dst_connector = this.mac_to_port_per_switch.get(incoming_node).get(dstMAC_val);
         // Do I know the destination MAC?
         if (dst_connector != null) {
-            if(dstMAC_val>100){
-                System.out.println("dstMAC_val");
-            }
             this.mac_to_port_per_switch.get(dst_connector.getNode()).put(dstMAC_val, dst_connector);
         }else{
             Set<NodeConnector> nodeConnectors =
@@ -500,18 +592,55 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
          }
         return dst_connector;
     }
+    @SuppressWarnings("unused")
     private Status installFlow(FirewallRule rule,RawPacket inPkt,NodeConnector incoming_connector) {
-        // TODO Auto-generated method stub
         Packet formattedPak = this.dataPacketService.decodeDataPacket(inPkt);
         FlowEntry flowentry=rule.changeToFlow(formattedPak,incoming_connector);
-        if (rule.getActions().equalsIgnoreCase("allow")){
+        List<Action> actionList = new ArrayList<Action>();
+        Matcher sstr;
+        sstr = Pattern.compile(ActionType.DENY.toString()).matcher(rule.getAction());
+        if (sstr.matches()) {
+            actionList.add(new Drop());
+        }
+        else {
+            sstr= Pattern.compile(ActionType.DISPATCH + ":(.*)").matcher(rule.getAction());
+            if (sstr.matches()) {
+                NodeConnector dMacConnector=null;
+                InetAddress dIp=NetUtils.parseInetAddress(sstr.group(1));
+                HostNodeConnector dHost=this.hostTracker.hostFind(dIp);
+                Node dHostN=incoming_connector.getNode();
+                if (dHost!=null){
+                    byte[] dMac=dHost.getDataLayerAddressBytes();
+                    long dMac_val = BitBufferHelper.toNumber(dMac);
+                    dMacConnector=this.mac_to_port_per_switch.get(dHostN).get(dMac_val);
+                    if (dMacConnector!=null){
+                        actionList.add(new Output(dMacConnector));
+                    }else{                        
+                        return new Status(StatusCode.NOTFOUND);
+                    }
+                }else{
+                    return new Status(StatusCode.NOTFOUND);
+                }
+                NodeConnector dstNode=this.getDstMac(inPkt, incoming_connector);
+                if(dstNode==null){
+                    return new Status(StatusCode.NOTFOUND);
+                }
+                if (!dstNode.equals(dMacConnector)){
+                    actionList.add(new Output(dstNode));
+                }
+            }
+        }
+        if (Pattern.compile(ActionType.ALLOW.toString()).matcher(rule.getAction()).matches()){
             NodeConnector dstNode=this.getDstMac(inPkt, incoming_connector);
             if(dstNode==null){
                 return new Status(StatusCode.NOTFOUND);
             }
-            List<Action> actions = new ArrayList<Action>();
-            actions.add(new Output(dstNode));
-            flowentry.getFlow().setActions(actions);
+            actionList.add(new Output(dstNode));
+        }
+        if (actionList!=null){
+            flowentry.getFlow().setActions(actionList);
+        }else{
+            return new Status(StatusCode.INTERNALERROR);
         }
         Status status = this.frm.installFlowEntry(flowentry);
         if (!status.isSuccess()) {
@@ -522,7 +651,7 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         } else {
             log.debug("Successfully installed policy "
                     + flowentry.toString() + " on switch " + flowentry.getNode().getNodeIDString());
-            ruleConfigList.get(rule.getName()).setInstallHw("true");
+            ruleConfigList.get(rule.getRuleId()).setInstallHw("true");
         }
         return new Status(StatusCode.SUCCESS);
     }

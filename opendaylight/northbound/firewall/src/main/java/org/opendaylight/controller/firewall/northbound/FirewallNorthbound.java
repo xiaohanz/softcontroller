@@ -2,6 +2,7 @@ package org.opendaylight.controller.firewall.northbound;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -91,9 +92,9 @@ public class FirewallNorthbound{
             throw new ServiceUnavailableException("Firewall " + RestMessages.SERVICEUNAVAILABLE.toString());
         }
         return frw;
-        }
+    }
     /**
-     * 获取当前防火墙状态
+     * get firewall status
      *
      * @param containerName
      *            Name of the Container (Eg. 'default')
@@ -126,7 +127,7 @@ public class FirewallNorthbound{
             return "{\"result\" : \"firewall disabled\"}\n";
     }
     /**
-     * 改变防火墙状态
+     * set firewall status
      * @param containerName
      *            Name of the Container (Eg. 'default')
      * @return
@@ -155,13 +156,14 @@ public class FirewallNorthbound{
         }
         if (status.equals("enabled")){
             frw.setstatus(true);
-            return "{\"status\" : \"success\", \"details\" : \"firewall running\"}\n";}
-        else if (status.equals("disabled"))
-            {
-            frw.setstatus(false);
-            return "{\"status\" : \"success\", \"details\" : \"firewall stop\"}\n";}
-        return status;
+            return "{\"status\" : \"success\", \"details\" : \"firewall running\"}\n";
         }
+        else if (status.equals("disabled")){
+            frw.setstatus(false);
+            return "{\"status\" : \"success\", \"details\" : \"firewall stop\"}\n";
+        }
+        return status;
+    }
     /**
      * Add a rule
      * @param containerName
@@ -211,8 +213,8 @@ public class FirewallNorthbound{
             throw new UnauthorizedException("User is not authorized to perform this operation on container "
                     + containerName);
         }
-        if (rule.getName() == null||name.equals("all")) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Invalid Configuration. Name is null or empty")
+        if (rule.getName() == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Invalid Configuration. Name is null")
                     .build();
         }
         handleResourceCongruence(name, rule.getName());
@@ -222,11 +224,6 @@ public class FirewallNorthbound{
         if (frw == null) {
             throw new ServiceUnavailableException("Firewall " + RestMessages.SERVICEUNAVAILABLE.toString());
         }
-        /**if (rule.getNode()!=null ){
-            String nodeType=rule.getNode().getType();
-            String nodeId=rule.getNode().getNodeIDString();
-            Node node = handleNodeAvailability(containerName, nodeType, nodeId);
-        }*/
         Status status=frw.addRule(rule);
             if(status.isSuccess()){
               NorthboundUtils.auditlog("rule", username, "added", containerName);
@@ -271,18 +268,19 @@ public class FirewallNorthbound{
      * }
      * </pre>
      */
+    /*
     @Path("/{containerName}/update/{name}")
     @PUT
     @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
     @StatusCodes({
-        @ResponseCode(code = 200, condition = "Static Flow modified successfully"),
-        @ResponseCode(code = 201, condition = "Flow Config processed successfully"),
-        @ResponseCode(code = 400, condition = "Failed to create Static Flow entry due to invalid flow configuration"),
+        @ResponseCode(code = 200, condition = "Firewall rule modified successfully"),
+        @ResponseCode(code = 201, condition = "rule Config processed successfully"),
+        @ResponseCode(code = 400, condition = "Failed to create firewall rule due to invalid firewall rule configuration"),
         @ResponseCode(code = 401, condition = "User not authorized to perform this operation"),
         @ResponseCode(code = 404, condition = "The Container Name or nodeId is not found"),
         @ResponseCode(code = 406, condition = "Cannot operate on Default Container when other Containers are active"),
-        @ResponseCode(code = 409, condition = "Failed to create Static Flow entry due to Conflicting Name or configuration"),
-        @ResponseCode(code = 500, condition = "Failed to create Static Flow entry. Failure Reason included in HTTP Error response"),
+        @ResponseCode(code = 409, condition = "Failed to create firewall rule due to Conflicting Name or configuration"),
+        @ResponseCode(code = 500, condition = "Failed to create firewall rule. Failure Reason included in HTTP Error response"),
         @ResponseCode(code = 503, condition = "One or more of Controller services are unavailable") })
     public Response updateRule(@PathParam(value = "containerName") String containerName,
             @PathParam(value = "name") String name, @TypeHint(FirewallRule.class) FirewallRule rule) {
@@ -297,9 +295,40 @@ public class FirewallNorthbound{
         }
         Status status=frw.updateRule(rule);
         if(status.isSuccess()){
-          NorthboundUtils.auditlog("rule", username, "added", containerName);
-          return Response.status(Response.Status.CREATED).entity("Success! FirewallRule modifed\n").build();
-    }
+          NorthboundUtils.auditlog("rule", username, "updated", containerName);
+          return NorthboundUtils.getResponse(status);
+        }
+    return NorthboundUtils.getResponse(status);
+    }*/
+    @Path("/{containerName}/update/{id}")
+    @PUT
+    @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @StatusCodes({
+        @ResponseCode(code = 200, condition = "Firewall rule modified successfully"),
+        @ResponseCode(code = 201, condition = "rule Config processed successfully"),
+        @ResponseCode(code = 400, condition = "Failed to create firewall rule due to invalid firewall rule configuration"),
+        @ResponseCode(code = 401, condition = "User not authorized to perform this operation"),
+        @ResponseCode(code = 404, condition = "The Container Name or nodeId is not found"),
+        @ResponseCode(code = 406, condition = "Cannot operate on Default Container when other Containers are active"),
+        @ResponseCode(code = 409, condition = "Failed to create firewall rule due to Conflicting Name or configuration"),
+        @ResponseCode(code = 500, condition = "Failed to create firewall rule. Failure Reason included in HTTP Error response"),
+        @ResponseCode(code = 503, condition = "One or more of Controller services are unavailable") })
+    public Response updateRule(@PathParam(value = "containerName") String containerName,
+            @PathParam(value = "id") String id, @TypeHint(FirewallRule.class) FirewallRule rule) {
+        if (!NorthboundUtils.isAuthorized(getUserName(), containerName, Privilege.WRITE, this)) {
+            throw new UnauthorizedException("User is not authorized to perform this operation on container "
+                    + containerName);
+        }
+        handleDefaultDisabled(containerName);
+        IFirewall frw = getFirewallService(containerName);
+        if (frw == null) {
+            throw new ServiceUnavailableException("Firewall " + RestMessages.SERVICEUNAVAILABLE.toString());
+        }
+        Status status=frw.updateRule(id,rule);
+        if(status.isSuccess()){
+          NorthboundUtils.auditlog("rule", username, "updated", containerName);
+          return NorthboundUtils.getResponse(status);
+        }
     return NorthboundUtils.getResponse(status);
     }
     /**
@@ -338,20 +367,20 @@ public class FirewallNorthbound{
      * }
      * </pre>
      */
-    @Path("/{containerName}/get/{name}")
+    @Path("/{containerName}/get/{id}")
     @GET
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
     @StatusCodes({ @ResponseCode(code = 200, condition = "Operation successful"),
         @ResponseCode(code = 401, condition = "User not authorized to perform this operation"),
         @ResponseCode(code = 404, condition = "The containerName is not found"),
         @ResponseCode(code = 503, condition = "One or more of Controller Services are unavailable") })
-    public FirewallRule getRule(@PathParam(value="containerName") String containerName,@PathParam("name") String name) {
+    public FirewallRule getRule(@PathParam(value="containerName") String containerName,@PathParam("id") String id) {
         if (!NorthboundUtils.isAuthorized(getUserName(), containerName, Privilege.WRITE, this)) {
             throw new UnauthorizedException("User is not authorized to perform this operation on container "
                     + containerName);
         }
         IFirewall frw = getFirewallService(containerName);
-        FirewallRule r=frw.getFirewallRule(name);
+        FirewallRule r=frw.getFirewallRule(id);
         if (r == null) {
             throw new ResourceNotFoundException(RestMessages.NOPOLICY.toString());
         }
@@ -398,28 +427,80 @@ public class FirewallNorthbound{
      * }
      * </pre>
      */
-    @Path("/{containerName}/rules")
+    @Path("/{containerName}/get")
     @GET
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    @StatusCodes({
-        @ResponseCode(code = 204, condition = "Firewall Rule deleted successfully"),
+    @StatusCodes({ @ResponseCode(code = 200, condition = "Operation successful"),
         @ResponseCode(code = 401, condition = "User not authorized to perform this operation"),
-        @ResponseCode(code = 404, condition = "The Container Name or Node-id or Flow Name passed is not found"),
-        @ResponseCode(code = 406, condition = "Failed to delete Firewall Rule due to invalid operation. Failure details included in HTTP Error response"),
-        @ResponseCode(code = 500, condition = "Failed to delete Firewall Rule. Failure Reason included in HTTP Error response"),
-        @ResponseCode(code = 503, condition = "One or more of Controller service is unavailable") })
+        @ResponseCode(code = 404, condition = "The containerName is not found"),
+        @ResponseCode(code = 503, condition = "One or more of Controller Services are unavailable") })
     public FirewallRules getAllRule(@PathParam(value="containerName") String containerName){
         if (!NorthboundUtils.isAuthorized(getUserName(), containerName, Privilege.WRITE, this)) {
             throw new UnauthorizedException("User is not authorized to perform this operation on container "
                     + containerName);
         }
         handleDefaultDisabled(containerName);
+        List<FirewallRule> firewallRules = getFirewallRulesInternal(containerName);
+        return new FirewallRules(firewallRules);
+    }
+    /**
+     * Returns a list of Firewall rules id given rule name
+     * @param containerName
+     *            Name of the Container (Eg. 'default')
+     * @return
+     *        List of rule id given rule name configured on a given container
+     *
+     *         <pre>
+     *
+     * Example:
+     *
+     * Request URL:
+     * http://localhost:8080/controller/nb/v2/firewall/default/getid/rule1
+     *
+     * </pre>
+     */
+    @Path("/{containerName}/getid/{ruleName}")
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @StatusCodes({ @ResponseCode(code = 200, condition = "Operation successful"),
+        @ResponseCode(code = 401, condition = "User not authorized to perform this operation"),
+        @ResponseCode(code = 404, condition = "The containerName is not found"),
+        @ResponseCode(code = 503, condition = "One or more of Controller Services are unavailable") })
+    public String getId(@PathParam(value="containerName") String containerName,@PathParam(value="ruleName") String ruleName){
+        if (!NorthboundUtils.isAuthorized(getUserName(), containerName, Privilege.WRITE, this)) {
+            throw new UnauthorizedException("User is not authorized to perform this operation on container "
+                    + containerName);
+        }
+        handleDefaultDisabled(containerName);
         IFirewall frw = getFirewallService(containerName);
+
         if (frw == null) {
             throw new ServiceUnavailableException("Firewall " + RestMessages.SERVICEUNAVAILABLE.toString());
         }
-        List<FirewallRule> firewallRules = getFirewallRulesInternal(containerName);
-        return new FirewallRules(firewallRules);
+        String idSet="";
+        idSet=frw.getRuleName_Id(ruleName);
+        return idSet+"\n";
+    }
+    @Path("/{containerName}/getid")
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+    @StatusCodes({ @ResponseCode(code = 200, condition = "Operation successful"),
+        @ResponseCode(code = 401, condition = "User not authorized to perform this operation"),
+        @ResponseCode(code = 404, condition = "The containerName is not found"),
+        @ResponseCode(code = 503, condition = "One or more of Controller Services are unavailable") })
+    public Map<String,String> getIds(@PathParam(value="containerName") String containerName){
+        if (!NorthboundUtils.isAuthorized(getUserName(), containerName, Privilege.WRITE, this)) {
+            throw new UnauthorizedException("User is not authorized to perform this operation on container "
+                    + containerName);
+        }
+        handleDefaultDisabled(containerName);
+        IFirewall frw = getFirewallService(containerName);
+
+        if (frw == null) {
+            throw new ServiceUnavailableException("Firewall " + RestMessages.SERVICEUNAVAILABLE.toString());
+        }
+        Map<String,String> idSet=frw.getRuleName_Ids();
+        return idSet;
     }
     /**
      * Delete a rule configuation
@@ -438,17 +519,17 @@ public class FirewallNorthbound{
      *
      * </pre>
      */
-    @Path("/{containerName}/delete/{name}")
+    @Path("/{containerName}/delete/{id}")
     @DELETE
     @StatusCodes({
         @ResponseCode(code = 204, condition = "Firewall Rule deleted successfully"),
         @ResponseCode(code = 401, condition = "User not authorized to perform this operation"),
-        @ResponseCode(code = 404, condition = "The Container Name or Node-id or Flow Name passed is not found"),
+        @ResponseCode(code = 404, condition = "The Container Name is not found"),
         @ResponseCode(code = 406, condition = "Failed to delete Firewall Rule due to invalid operation. Failure details included in HTTP Error response"),
         @ResponseCode(code = 500, condition = "Failed to delete Firewall Rule. Failure Reason included in HTTP Error response"),
         @ResponseCode(code = 503, condition = "One or more of Controller service is unavailable") })
     public Response deleteRule(@PathParam(value = "containerName") String containerName,
-            @PathParam(value = "name") String name) {
+            @PathParam(value = "id") String id) {
         if (!NorthboundUtils.isAuthorized(getUserName(), containerName, Privilege.WRITE, this)) {
             throw new UnauthorizedException("User is not authorized to perform this operation on container "
                     + containerName);
@@ -462,26 +543,18 @@ public class FirewallNorthbound{
         }
 
 //        Node node = handleNodeAvailability(containerName, nodeType, nodeId);
-
-        FirewallRule ruleconfig = frw.getFirewallRule(name);
-        if (ruleconfig == null) {
-            throw new ResourceNotFoundException(name + " : " + RestMessages.NOPOLICY.toString());
-        }
-
-        Status status = frw.removeFirewallRule(name,ruleconfig);
+        Status status = frw.removeFirewallRule(id);
         if (status.isSuccess()) {
             NorthboundUtils.auditlog("Firewall Rule", username, "removed",
-                    name, containerName);
+                     containerName);
             return Response.status(Response.Status.NO_CONTENT).entity("Success! FirewallRule deleted."+"\n").build();
         }
         return NorthboundUtils.getResponse(status);
     }
     /**
-     * Delete a rule configuation
+     * Delete all rules
      * @param containerName
      *            Name of the Container (Eg. 'default')
-     * @param name
-     *            Name of the Firewall Rule configuration (Eg. 'rule1')
      * @return Response as dictated by the HTTP Response code
      *
      *         <pre>
@@ -496,11 +569,11 @@ public class FirewallNorthbound{
     @Path("/{containerName}/delete")
     @DELETE
     @StatusCodes({
-        @ResponseCode(code = 204, condition = "Firewall Rule deleted successfully"),
+        @ResponseCode(code = 204, condition = "Firewall Rules deleted successfully"),
         @ResponseCode(code = 401, condition = "User not authorized to perform this operation"),
-        @ResponseCode(code = 404, condition = "The Container Name or Node-id or Flow Name passed is not found"),
-        @ResponseCode(code = 406, condition = "Failed to delete Firewall Rule due to invalid operation. Failure details included in HTTP Error response"),
-        @ResponseCode(code = 500, condition = "Failed to delete Firewall Rule. Failure Reason included in HTTP Error response"),
+        @ResponseCode(code = 404, condition = "The Container Name is not found"),
+        @ResponseCode(code = 406, condition = "Failed to delete all Firewall Rules due to invalid operation. Failure details included in HTTP Error response"),
+        @ResponseCode(code = 500, condition = "Failed to delete all Firewall Rules. Failure Reason included in HTTP Error response"),
         @ResponseCode(code = 503, condition = "One or more of Controller service is unavailable") })
     public Response deleteRules(@PathParam(value = "containerName") String containerName) {
         if (!NorthboundUtils.isAuthorized(getUserName(), containerName, Privilege.WRITE, this)) {
@@ -518,12 +591,12 @@ public class FirewallNorthbound{
 //        Node node = handleNodeAvailability(containerName, nodeType, nodeId);
         Status status=new Status(StatusCode.BADREQUEST);
         for (FirewallRule conf : frw.getRuleConfigList().values()){
-            status=frw.removeFirewallRule(conf.getName(), conf);
+            status=frw.removeFirewallRule(conf.getId());
         }
         if (status.isSuccess()) {
             NorthboundUtils.auditlog("Firewall Rule", username, "removed",
                      containerName);
-            return Response.status(Response.Status.NO_CONTENT).entity("Success! FirewallRule deleted"+"\n").build();
+            return Response.status(Response.Status.NO_CONTENT).entity("Success! All firewallRules deleted"+"\n").build();
         }
         return NorthboundUtils.getResponse(status);
     }
@@ -570,18 +643,18 @@ public class FirewallNorthbound{
     }
     private List<FirewallRule> getFirewallRulesInternal(String containerName) {
 
-        IFirewall firewall = (IFirewall) ServiceHelper
+        IFirewall frw = (IFirewall) ServiceHelper
                 .getInstance(IFirewall.class, containerName,
                         this);
 
-        if (firewall == null) {
+        if (frw == null) {
             throw new ResourceNotFoundException(RestMessages.NOCONTAINER
                     .toString());
         }
 
         List<FirewallRule> firewallrules = new ArrayList<FirewallRule>();
 
-        for (FirewallRule conf : firewall.getRuleConfigList()
+        for (FirewallRule conf : frw.getRuleConfigList()
                 .values()) {
             firewallrules.add(conf);
         }

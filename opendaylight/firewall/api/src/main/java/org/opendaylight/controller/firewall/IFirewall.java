@@ -1,11 +1,12 @@
 package org.opendaylight.controller.firewall;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import org.opendaylight.controller.sal.utils.Status;
 
 /**
- * Interface that describes methods for .
+ * Interface that describes methods for firewall.
  */
 public interface IFirewall {
 
@@ -35,7 +36,7 @@ public interface IFirewall {
      * @param name
      * @return
      */
-    public Status removeFirewallRule(String name,FirewallRule ruleconfig);
+    public Status removeFirewallRule(String id);
     /**
      * @return
      */
@@ -45,5 +46,22 @@ public interface IFirewall {
      * @param rule
      * @return
      */
-    public Status updateRule(FirewallRule rule);
+    public Status updateRule(String id,FirewallRule rule);
+    /**
+     *
+     * @param ruleConfig
+     * @return
+     */
+    public String addRuleInternal(FirewallRule ruleConfig);
+    /**
+     *
+     * @param ruleName
+     * @return
+     */
+    public String getRuleName_Id(String ruleName);
+    /**
+     *
+     * @return
+     */
+    public Map<String,String> getRuleName_Ids();
 }
