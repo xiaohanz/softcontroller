@@ -1,15 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
- <parent>
+  <parent>
     <groupId>org.opendaylight.controller</groupId>
     <artifactId>commons.opendaylight</artifactId>
     <version>1.4.1-SNAPSHOT</version>
-    <relativePath>../commons/opendaylight</relativePath>
+    <relativePath>../../commons/opendaylight</relativePath>
   </parent>
+  <scm>
+    <connection>scm:git:ssh://git.opendaylight.org:29418/controller.git</connection>
+    <developerConnection>scm:git:ssh://git.opendaylight.org:29418/controller.git</developerConnection>
+    <url>https://wiki.opendaylight.org/view/OpenDaylight_Controller:Main</url>
+    <tag>HEAD</tag>
+  </scm>
 
-  <artifactId>l2forwardingmanager.implementation</artifactId>
-  <version>0.4.1-SNAPSHOT</version>
+  <artifactId>flowstoragemanager</artifactId>
+  <version>0.0.1</version>
   <packaging>bundle</packaging>
 
   <build>
@@ -21,27 +27,31 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
+            <Include-Resource>
+            </Include-Resource>
+            <Export-Package>
+              org.opendaylight.controller.flowstoragemanager
+            </Export-Package>
             <Import-Package>
-              org.opendaylight.controller.sal.core,
-              org.opendaylight.controller.sal.utils,
-              org.opendaylight.controller.sal.packet,
-              org.opendaylight.controller.sal.match,
+              org.opendaylight.controller.forwardingrulesmanager,
               org.opendaylight.controller.sal.action,
+              org.opendaylight.controller.sal.core,
               org.opendaylight.controller.sal.flowprogrammer,
-              org.opendaylight.controller.switchmanager,
-              org.opendaylight.controller.flowmanager,
-              org.opendaylight.controller.hosttracker,
-              org.opendaylight.controller.hosttracker.hostAware,
-              org.opendaylight.controller.topologymanager,
+              org.opendaylight.controller.sal.match,
+              org.opendaylight.controller.sal.utils,
+              javax.xml.bind.annotation,
+              javax.xml.bind,
               org.apache.felix.dm,
+              org.apache.commons.lang3.builder,
+              org.osgi.service.component,
               org.slf4j,
-              org.osgi.framework,
               org.eclipse.osgi.framework.console,
-              org.osgi.service.component
+              org.osgi.framework
             </Import-Package>
-            <Bundle-Activator>
-              org.opendaylight.controller.l2forwardingmanager.internal.Activator
-            </Bundle-Activator>
+            <Require-Bundle>
+            </Require-Bundle>
+            <Service-Component>
+            </Service-Component>
           </instructions>
           <manifestLocation>${project.basedir}/META-INF</manifestLocation>
         </configuration>
@@ -51,31 +61,17 @@
   <dependencies>
     <dependency>
       <groupId>org.opendaylight.controller</groupId>
-      <artifactId>switchmanager</artifactId>
+      <artifactId>sal</artifactId>
+      <version>0.6.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.opendaylight.controller</groupId>
-      <artifactId>sal</artifactId>
-      <version>0.5.1-SNAPSHOT</version>
+      <artifactId>forwardingrulesmanager</artifactId>
+      <version>0.5.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.opendaylight.controller</groupId>
-      <artifactId>flowmanager</artifactId>
-      <version>0.4.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.opendaylight.controller</groupId>
-      <artifactId>hosttracker</artifactId>
-      <version>0.4.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>equinoxSDK381</groupId>
-      <artifactId>org.eclipse.osgi</artifactId>
-    </dependency>
   </dependencies>
 </project>
-

@@ -19,8 +19,10 @@ import org.opendaylight.controller.clustering.services.IClusterContainerServices
 import org.opendaylight.controller.configuration.IConfigurationContainerAware;
 import org.opendaylight.controller.connectionmanager.IConnectionManager;
 import org.opendaylight.controller.containermanager.IContainerManager;
+import org.opendaylight.controller.flowstoragemanager.IFlowUpdateListener;
 import org.opendaylight.controller.forwardingrulesmanager.IForwardingRulesManager;
 import org.opendaylight.controller.forwardingrulesmanager.IForwardingRulesManagerAware;
+import org.opendaylight.controller.forwardingrulesmanager.IReceiveflowid;
 import org.opendaylight.controller.sal.core.ComponentActivatorAbstractBase;
 import org.opendaylight.controller.sal.core.IContainer;
 import org.opendaylight.controller.sal.core.IContainerLocalListener;
@@ -82,7 +84,7 @@ public class Activator extends ComponentActivatorAbstractBase {
             interfaces = new String[] { IContainerLocalListener.class.getName(), ISwitchManagerAware.class.getName(),
                     IForwardingRulesManager.class.getName(), IInventoryListener.class.getName(),
                     IConfigurationContainerAware.class.getName(), ICacheUpdateAware.class.getName(),
-                    IFlowProgrammerListener.class.getName() };
+                    IFlowProgrammerListener.class.getName(),IReceiveflowid.class.getName()  };
 
             c.setInterface(interfaces, props);
 
@@ -98,6 +100,8 @@ public class Activator extends ComponentActivatorAbstractBase {
                     .setCallbacks("setIContainer", "unsetIContainer").setRequired(true));
             c.add(createServiceDependency().setService(IConnectionManager.class)
                     .setCallbacks("setIConnectionManager", "unsetIConnectionManager").setRequired(true));
+            c.add(createContainerServiceDependency(containerName).setService(IFlowUpdateListener.class)
+                    .setCallbacks("setIFlowUpdateListener", "unsetIFlowUpdateListener").setRequired(true));
             if (GlobalConstants.DEFAULT.toString().equals(containerName)) {
                 c.add(createServiceDependency().setService(IContainerManager.class)
                         .setCallbacks("setIContainerManager", "unsetIContainerManager").setRequired(true));

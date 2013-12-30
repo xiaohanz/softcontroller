@@ -14,8 +14,8 @@
     <tag>HEAD</tag>
   </scm>
 
-  <artifactId>forwardingrulesmanager.implementation</artifactId>
-  <version>0.4.1-SNAPSHOT</version>
+  <artifactId>flowstoragemanager.implementation</artifactId>
+  <version>0.0.1</version>
   <packaging>bundle</packaging>
 
   <build>
@@ -30,25 +30,17 @@
             <Include-Resource>
             </Include-Resource>
             <Export-Package>
-              org.opendaylight.controller.forwardingrulesmanager.implementation.data
             </Export-Package>
             <Import-Package>
               org.opendaylight.controller.flowstoragemanager,
-              org.opendaylight.controller.clustering.services,
-              org.opendaylight.controller.configuration,
-              org.opendaylight.controller.containermanager,
-              org.opendaylight.controller.hosttracker,
-              org.opendaylight.controller.hosttracker.hostAware,
-              org.opendaylight.controller.switchmanager,
+              org.opendaylight.controller.forwardingrulesmanager,
+              org.opendaylight.controller.northbound.commons.exception,
+              org.opendaylight.controller.northbound.commons,
               org.opendaylight.controller.sal.action,
               org.opendaylight.controller.sal.core,
               org.opendaylight.controller.sal.flowprogrammer,
               org.opendaylight.controller.sal.match,
               org.opendaylight.controller.sal.utils,
-              org.opendaylight.controller.sal.packet,
-              org.opendaylight.controller.sal.connection,
-              org.opendaylight.controller.forwardingrulesmanager,
-              org.opendaylight.controller.connectionmanager,
               javax.xml.bind.annotation,
               javax.xml.bind,
               org.apache.felix.dm,
@@ -58,10 +50,9 @@
               org.osgi.framework
             </Import-Package>
             <Bundle-Activator>
-              org.opendaylight.controller.forwardingrulesmanager.internal.Activator
+              org.opendaylight.controller.flowstoragemanager.internal.Activator
             </Bundle-Activator>
             <Require-Bundle>
-              org.opendaylight.controller.hosttracker
             </Require-Bundle>
             <Service-Component>
             </Service-Component>
@@ -72,34 +63,20 @@
     </plugins>
   </build>
   <dependencies>
-    <dependency>
+   <dependency>
       <groupId>org.opendaylight.controller</groupId>
-      <artifactId>hosttracker</artifactId>
-      <version>${hosttracker.version}</version>
+      <artifactId>flowstoragemanager</artifactId>
+      <version>0.0.1</version>
     </dependency>
     <dependency>
       <groupId>org.opendaylight.controller</groupId>
-      <artifactId>configuration</artifactId>
+      <artifactId>commons.northbound</artifactId>
       <version>0.4.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.opendaylight.controller</groupId>
-      <artifactId>clustering.services</artifactId>
-      <version>0.4.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.opendaylight.controller</groupId>
-      <artifactId>switchmanager</artifactId>
     </dependency>
     <dependency>
       <groupId>org.opendaylight.controller</groupId>
       <artifactId>sal</artifactId>
       <version>0.5.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.opendaylight.controller</groupId>
-      <artifactId>sal.connection</artifactId>
-      <version>0.1.1-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.opendaylight.controller</groupId>
@@ -113,21 +90,6 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.opendaylight.controller</groupId>
-      <artifactId>connectionmanager</artifactId>
-      <version>0.1.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.opendaylight.controller</groupId>
-      <artifactId>containermanager</artifactId>
-      <version>0.5.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.opendaylight.controller</groupId>
-      <artifactId>flowstoragemanager</artifactId>
-      <version>0.0.1</version>
     </dependency>
   </dependencies>
 </project>

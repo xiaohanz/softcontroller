@@ -1,0 +1,258 @@
+package org.opendaylight.controller.dbclient;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import org.opendaylight.controller.flowstoragemanager.IFlowStorage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class Dbclient implements IFlowStorage{
+        private Connection conn = null;
+        private static final String url = "jdbc:mysql://localhost:3306/bnc?user=root&password=hou&useUnicode=true&&characterEncoding=gb2312&autoReconnect = true";
+        //绠�崟鍐欐硶锛歶rl = "jdbc:myqsl://localhost/test(鏁版嵁搴撳悕)? user=root(鐢ㄦ埛)&password=yqs2602555(瀵嗙爜)";
+        private String user = null;
+        private String password = null;
+        private static final Logger log = LoggerFactory.getLogger(Dbclient.class);
+        /**
+         * Function called by the dependency manager when all the required
+         * dependencies are satisfied
+         *
+         */
+        void init() {
+            try {
+                //java.sql.DriverManager.registerDriver(new Driver());
+                Class.forName("com.mysql.jdbc.Driver").newInstance(); //鍔犺浇mysq椹卞姩
+                System.out.println("********************"+'\n'+'\n'+'\n'+'\n');
+                log.info("dongliang: mysql init ok");
+                try {
+                    if(conn == null){
+                        this.connectDb();
+                    }
+                    ResultSet rs = conn.getMetaData().getTables(null, null, "action", null);
+                    if (rs.next()){
+                        System.out.println("action表已建立");
+                    }else{
+                        System.out.println("action表未建立");
+                        System.out.println("正在建立action表");
+                        PreparedStatement pstmtaction=null;
+                        String actionSql = createactiontable();
+                        pstmtaction = conn.prepareStatement(actionSql,Statement.RETURN_GENERATED_KEYS);
+                        conn.setAutoCommit(false);
+                        pstmtaction.executeUpdate();
+                        conn.commit();
+                        System.out.println("action表已经建立");
+                    }
+                } catch (SQLException e) {
+                    System.out.println("数据库连接出错");
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                try {
+                    if(conn == null){
+                        this.connectDb();
+                    }
+                    ResultSet rs = conn.getMetaData().getTables(null, null, "nodetype", null);
+                    if (rs.next()){
+                        System.out.println("nodetype表已建立");
+                    }else{
+                        System.out.println("nodetype表未建立");
+                        System.out.println("正在建立nodetype表");
+                        PreparedStatement pstmtnodetype=null;
+                        String nodetypeSql = this.createnodetypetable();
+                        pstmtnodetype = conn.prepareStatement(nodetypeSql,Statement.RETURN_GENERATED_KEYS);
+                        conn.setAutoCommit(false);
+                        pstmtnodetype.executeUpdate();
+                        conn.commit();
+                        System.out.println("nodetype表已经建立");
+                    }
+                } catch (SQLException e) {
+                    System.out.println("数据库连接出错");
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                try {
+                    if(conn == null){
+                        this.connectDb();
+                    }
+                    ResultSet rs = conn.getMetaData().getTables(null, null, "protocol", null);
+                    if (rs.next()){
+                        System.out.println("protocol表已建立");
+                    }else{
+                        System.out.println("protocol表未建立");
+                        System.out.println("正在建立protocol表");
+                        PreparedStatement pstmtprotocol=null;
+                        String protocolSql = this.createprotocoltable();
+                        pstmtprotocol = conn.prepareStatement(protocolSql,Statement.RETURN_GENERATED_KEYS);
+                        conn.setAutoCommit(false);
+                        pstmtprotocol.executeUpdate();
+                        conn.commit();
+                        System.out.println("protocol表已经建立");
+                    }
+                } catch (SQLException e) {
+                    System.out.println("数据库连接出错");
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                try {
+                    if(conn == null){
+                        this.connectDb();
+                    }
+                    ResultSet rs = conn.getMetaData().getTables(null, null, "statistic", null);
+                    if (rs.next()){
+                        System.out.println("statistic表已建立");
+                    }else{
+                        System.out.println("statistic表未建立");
+                        System.out.println("正在建立statistic表");
+                        PreparedStatement pstmtstatistic=null;
+                        String statisticSql = this.createstatistictable();
+                        pstmtstatistic = conn.prepareStatement(statisticSql,Statement.RETURN_GENERATED_KEYS);
+                        conn.setAutoCommit(false);
+                        pstmtstatistic.executeUpdate();
+                        conn.commit();
+                        System.out.println("statistic表已经建立");
+                    }
+                } catch (SQLException e) {
+                    System.out.println("数据库连接出错");
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                try {
+                    if(conn == null){
+                        this.connectDb();
+                    }
+                    ResultSet rs = conn.getMetaData().getTables(null, null, "match", null);
+                    if (rs.next()){
+                        System.out.println("match表已建立");
+                    }else{
+                        System.out.println("match表未建立");
+                        System.out.println("正在建立match表");
+                        PreparedStatement pstmtmatch=null;
+                        String matchSql = this.creatematchtable();
+                        pstmtmatch = conn.prepareStatement(matchSql,Statement.RETURN_GENERATED_KEYS);
+                        conn.setAutoCommit(false);
+                        pstmtmatch.executeUpdate();
+                        conn.commit();
+                        System.out.println("match表已经建立");
+                    }
+                } catch (SQLException e) {
+                    System.out.println("数据库连接出错");
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                try {
+                    if(conn == null){
+                        this.connectDb();
+                    }
+                    ResultSet rs = conn.getMetaData().getTables(null, null, "flow", null);
+                    if (rs.next()){
+                        System.out.println("flow表已建立");
+                    }else{
+                        System.out.println("flow表未建立");
+                        System.out.println("正在建立flow表");
+                        PreparedStatement pstmtflow=null;
+                        String flowSql = this.createflowtable();
+                        pstmtflow = conn.prepareStatement(flowSql,Statement.RETURN_GENERATED_KEYS);
+                        conn.setAutoCommit(false);
+                        pstmtflow.executeUpdate();
+                        PreparedStatement pstmtflowkey=null;
+                        String flowkeySql = this.createflowkeytable();
+                        pstmtflowkey = conn.prepareStatement(flowkeySql,Statement.RETURN_GENERATED_KEYS);
+                        conn.setAutoCommit(false);
+                        pstmtflowkey.executeUpdate();
+                        conn.commit();
+                        System.out.println("flow表已经建立");
+                    }
+                } catch (SQLException e) {
+                    System.out.println("数据库连接出错");
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                System.out.println("加载驱动失败");
+                e.printStackTrace();//鎵撳嵃鍑洪敊璇︾粏淇℃伅
+                log.info("dongliang: mysql init fail");
+            }
+        }
+        //connect to mySql server
+        public Connection connectDb(){
+            try {
+                 user = "root";
+                 password = "hou";
+                 conn = DriverManager.getConnection(url,user,password);
+            } catch (SQLException e) {
+                System.out.println("数据库连接错误");
+                e.printStackTrace();
+                return null;
+            }
+            return conn;
+        }
+        //disconnect from the mySql server
+        public void disConnectDb(){
+            try {
+              if(conn != null) {
+                  conn.close();
+                  conn = null;
+             }
+            } catch(Exception e) {
+             System.out.println("鏁版嵁搴撳叧闂敊璇�");
+             e.printStackTrace();
+            }
+        }
+        //
+        /**
+         * Function called by dependency manager after "init ()" is called
+         * and after the services provided by the class are registered in
+         * the service registry
+         *
+         */
+        void start() {
+        }
+
+        /**
+         * Function called by the dependency manager before the services
+         * exported by the component are unregistered, this will be
+         * followed by a "destroy ()" calls
+         */
+        void stop(){
+        }
+        public String createactiontable(){
+            String actionSql;
+            actionSql="create table `action`(`action_id` int(11) NOT NULL AUTO_INCREMENT,`actions` text DEFAULT NULL,PRIMARY KEY(`action_id`))DEFAULT CHARSET=utf8";
+            return actionSql;
+        }
+        public String createnodetypetable(){
+            String nodetypeSql;
+            nodetypeSql="create table `nodetype`(`type_id` int(11) NOT NULL AUTO_INCREMENT,`node_type` varchar(255) DEFAULT NULL,PRIMARY KEY(`type_id`))DEFAULT CHARSET=utf8";
+            return nodetypeSql;
+        }
+        public String createprotocoltable(){
+            String protocolSql;
+            protocolSql="create table `protocol`(`Protocol_id` int(11) NOT NULL AUTO_INCREMENT,`NW_PROTO` varchar(255) DEFAULT NULL,PRIMARY KEY(`Protocol_id`))DEFAULT CHARSET=utf8";
+            return protocolSql;
+        }
+        public String createstatistictable(){
+            String statisticSql;
+            statisticSql="create table `statistic`(`statistic_id` int(11) NOT NULL AUTO_INCREMENT,`reason` varchar(255) DEFAULT NULL,`setup_time` time DEFAULT NULL,`durationSeconds` int(11) DEFAULT NULL,`durationNanoseconds` int(11) DEFAULT NULL,`recv_pkts` bigint(20) DEFAULT NULL,`recv_bytes` bigint(20) DEFAULT NULL,PRIMARY KEY(`statistic_id`))DEFAULT CHARSET=utf8";
+            return statisticSql;
+        }
+        public String creatematchtable(){
+            String matchSql;
+            matchSql="create table `match`(`match_id` int(11) NOT NULL AUTO_INCREMENT,`IN_PORT` text DEFAULT NULL,`OUT_PORT` text DEFAULT NULL,`DL_SRC` char(255) DEFAULT NULL,`DL_DST` char(255) DEFAULT NULL,`DL_TYPE` smallint(6) DEFAULT NULL,`DL_VLAN` smallint(6) DEFAULT NULL,`DL_VLAN_PR` tinyint(4) DEFAULT NULL,`NW_SRC` varchar(255) DEFAULT NULL,`NW_DST` varchar(255) DEFAULT NULL,`NW_PROTO` int(4) DEFAULT NULL,`NW_TOS` tinyint(4) DEFAULT NULL,`TP_SRC` int(11) DEFAULT NULL,`TP_DST` int(11) DEFAULT NULL,PRIMARY KEY(`match_id`),INDEX (`NW_PROTO`),foreign key(NW_PROTO) references protocol(Protocol_id) on delete cascade on update cascade)DEFAULT CHARSET=utf8";
+            return matchSql;
+        }
+        public String createflowtable(){
+            String flowSql;
+            flowSql="create table `flow`(`flow_id` bigint(20) NOT NULL,`node_id` varchar(30),`node_type` int(20),`entry_priority` smallint(11),`actions` int(225),`match_id` int(225),`statistic_id` int(11),`idleTimeout` datetime DEFAULT NULL,`hardTimeout` datetime DEFAULT NULL,`cookie` text  DEFAULT NULL, PRIMARY KEY(`flow_id`),INDEX (`node_type`),FOREIGN KEY(node_type) references nodetype(type_id) on delete cascade on update cascade,INDEX (`actions`),FOREIGN KEY(actions) references action(action_id) on delete cascade on update cascade,INDEX (`statistic_id`),FOREIGN KEY(statistic_id) references statistic(statistic_id) on delete cascade on update cascade)DEFAULT CHARSET=utf8";
+            return flowSql;
+        }
+        public String createflowkeytable(){
+            String flowkeySql;
+            flowkeySql="ALTER TABLE `flow` ADD CONSTRAINT match1 FOREIGN KEY (`match_id`) REFERENCES `match`(`match_id`) on delete CASCADE ON UPDATE CASCADE";
+            return flowkeySql;
+        }
+}

@@ -12,6 +12,7 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.apache.felix.dm.Component;
+import org.opendaylight.controller.forwardingrulesmanager.IReceiveflowid;
 import org.opendaylight.controller.protocol_plugin.openflow.IDataPacketListen;
 import org.opendaylight.controller.protocol_plugin.openflow.IDataPacketMux;
 import org.opendaylight.controller.protocol_plugin.openflow.IDiscoveryListener;
@@ -277,6 +278,11 @@ public class Activator extends ComponentActivatorAbstractBase {
                     .setCallbacks("setIPluginOutConnectionService",
                             "unsetIPluginOutConnectionService")
                     .setRequired(true));
+            c.add(createServiceDependency()
+                    .setService(IReceiveflowid.class)
+                    .setCallbacks("setIReceiveflowid",
+                            "unsetIReceiveflowid")
+                    .setRequired(false));
         }
 
         if (imp.equals(ReadServiceFilter.class)) {
