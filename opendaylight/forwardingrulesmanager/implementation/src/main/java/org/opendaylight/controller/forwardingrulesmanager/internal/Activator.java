@@ -101,7 +101,7 @@ public class Activator extends ComponentActivatorAbstractBase {
             c.add(createServiceDependency().setService(IConnectionManager.class)
                     .setCallbacks("setIConnectionManager", "unsetIConnectionManager").setRequired(true));
             c.add(createContainerServiceDependency(containerName).setService(IFlowUpdateListener.class)
-                    .setCallbacks("setIFlowUpdateListener", "unsetIFlowUpdateListener").setRequired(true));
+                    .setCallbacks("setIFlowUpdateListener", "unsetIFlowUpdateListener").setRequired(false));
             if (GlobalConstants.DEFAULT.toString().equals(containerName)) {
                 c.add(createServiceDependency().setService(IContainerManager.class)
                         .setCallbacks("setIContainerManager", "unsetIContainerManager").setRequired(true));

@@ -1,10 +1,4 @@
-/*
- * Copyright (c) 2013 Cisco Systems, Inc. and others.  All rights reserved.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v1.0 which accompanies this distribution,
- * and is available at http://www.eclipse.org/legal/epl-v10.html
- */
+
 
 package org.opendaylight.controller.flowstoragemanager.internal;
 
@@ -349,7 +343,7 @@ public class FlowStorageManager implements
     }
     public void addFlowList(ArrayList<FlowEntry> flowDB){
         if (dbstorage == null) {
-            throw new ServiceUnavailableException(RestMessages.SERVICEUNAVAILABLE.toString());
+            System.out.println("Drive error");
         } else{
             if(conn == null){
                 conn = dbstorage.connectDb();
@@ -366,11 +360,11 @@ public class FlowStorageManager implements
     }
     public void timer(){
          Calendar calendar = Calendar.getInstance();
-         calendar.set(Calendar.HOUR_OF_DAY, 12); // 控制时
-         calendar.set(Calendar.MINUTE, 0);       // 控制分
-         calendar.set(Calendar.SECOND, 0);       // 控制秒
+         calendar.set(Calendar.HOUR_OF_DAY, 12);
+         calendar.set(Calendar.MINUTE, 0);
+         calendar.set(Calendar.SECOND, 0);
 
-         Date time = calendar.getTime();         // 得出执行任务的时间,此处为今天的12：00：00
+         Date time = calendar.getTime();
 
          Timer timer = new Timer();
          timer.scheduleAtFixedRate(new TimerTask() {
@@ -460,7 +454,7 @@ public class FlowStorageManager implements
                  pstmtFlow.executeUpdate();
                  conn.commit();
              }catch(SQLException e) {
-                 System.out.println("鍑虹幇SQLException寮傚父");
+                 System.out.println("SQLException");
              }
      return 1;
     }
@@ -488,7 +482,7 @@ public class FlowStorageManager implements
          PreparedStatement pstmtupdate=null;
          PreparedStatement pstmtgetidSql = null;
          if (dbstorage == null) {
-             throw new ServiceUnavailableException(RestMessages.SERVICEUNAVAILABLE.toString());
+             System.out.println("Drive error");
          } else{
              stopTime = getSysTime();
              //if not connect with database then try connect
@@ -514,9 +508,8 @@ public class FlowStorageManager implements
                  pstmtupdate.executeUpdate();
                  conn.commit();
              }catch(SQLException e) {
-                 System.out.println("鍑虹幇SQLException寮傚父");
+                 System.out.println("SQLException");
              } finally {
-                   //鍏抽棴璇彞鍜屾暟鎹簱杩炴帴
                  try {
                      if (conn != null){
                          dbstorage.disConnectDb();
@@ -527,7 +520,7 @@ public class FlowStorageManager implements
                          pstmtupdate = null;
                      }
                  } catch(SQLException e) {
-                     System.out.println("鍏抽棴鏁版嵁搴撹繛鎺ユ椂鍑虹幇寮傚父");
+                     System.out.println("Database connection error");
                  }
              }
      }

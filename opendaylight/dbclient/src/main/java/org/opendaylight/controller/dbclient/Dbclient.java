@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 public class Dbclient implements IFlowStorage{
         private Connection conn = null;
         private static final String url = "jdbc:mysql://localhost:3306/bnc?user=root&password=hou&useUnicode=true&&characterEncoding=gb2312&autoReconnect = true";
-        //绠�崟鍐欐硶锛歶rl = "jdbc:myqsl://localhost/test(鏁版嵁搴撳悕)? user=root(鐢ㄦ埛)&password=yqs2602555(瀵嗙爜)";
         private String user = null;
         private String password = null;
         private static final Logger log = LoggerFactory.getLogger(Dbclient.class);
@@ -26,7 +25,7 @@ public class Dbclient implements IFlowStorage{
         void init() {
             try {
                 //java.sql.DriverManager.registerDriver(new Driver());
-                Class.forName("com.mysql.jdbc.Driver").newInstance(); //鍔犺浇mysq椹卞姩
+                Class.forName("com.mysql.jdbc.Driver").newInstance();
                 System.out.println("********************"+'\n'+'\n'+'\n'+'\n');
                 log.info("dongliang: mysql init ok");
                 try {
@@ -35,20 +34,20 @@ public class Dbclient implements IFlowStorage{
                     }
                     ResultSet rs = conn.getMetaData().getTables(null, null, "action", null);
                     if (rs.next()){
-                        System.out.println("action表已建立");
+                        System.out.println("action table has been established");
                     }else{
-                        System.out.println("action表未建立");
-                        System.out.println("正在建立action表");
+                        System.out.println("action table is not established");
+                        System.out.println("Creating the action table");
                         PreparedStatement pstmtaction=null;
                         String actionSql = createactiontable();
                         pstmtaction = conn.prepareStatement(actionSql,Statement.RETURN_GENERATED_KEYS);
                         conn.setAutoCommit(false);
                         pstmtaction.executeUpdate();
                         conn.commit();
-                        System.out.println("action表已经建立");
+                        System.out.println("action table has been established");
                     }
                 } catch (SQLException e) {
-                    System.out.println("数据库连接出错");
+                    System.out.println("Database connection error");
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -58,20 +57,20 @@ public class Dbclient implements IFlowStorage{
                     }
                     ResultSet rs = conn.getMetaData().getTables(null, null, "nodetype", null);
                     if (rs.next()){
-                        System.out.println("nodetype表已建立");
+                        System.out.println("nodetype table has been established");
                     }else{
-                        System.out.println("nodetype表未建立");
-                        System.out.println("正在建立nodetype表");
+                        System.out.println("nodetype table is not established");
+                        System.out.println("Creating the nodetype table");
                         PreparedStatement pstmtnodetype=null;
                         String nodetypeSql = this.createnodetypetable();
                         pstmtnodetype = conn.prepareStatement(nodetypeSql,Statement.RETURN_GENERATED_KEYS);
                         conn.setAutoCommit(false);
                         pstmtnodetype.executeUpdate();
                         conn.commit();
-                        System.out.println("nodetype表已经建立");
+                        System.out.println("nodetype table has been established");
                     }
                 } catch (SQLException e) {
-                    System.out.println("数据库连接出错");
+                    System.out.println("Database connection error");
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -81,20 +80,20 @@ public class Dbclient implements IFlowStorage{
                     }
                     ResultSet rs = conn.getMetaData().getTables(null, null, "protocol", null);
                     if (rs.next()){
-                        System.out.println("protocol表已建立");
+                        System.out.println("protocol table has been established");
                     }else{
-                        System.out.println("protocol表未建立");
-                        System.out.println("正在建立protocol表");
+                        System.out.println("protocol table is not established");
+                        System.out.println("Creating the protocol table");
                         PreparedStatement pstmtprotocol=null;
                         String protocolSql = this.createprotocoltable();
                         pstmtprotocol = conn.prepareStatement(protocolSql,Statement.RETURN_GENERATED_KEYS);
                         conn.setAutoCommit(false);
                         pstmtprotocol.executeUpdate();
                         conn.commit();
-                        System.out.println("protocol表已经建立");
+                        System.out.println("protocol table has been established");
                     }
                 } catch (SQLException e) {
-                    System.out.println("数据库连接出错");
+                    System.out.println("Database connection error");
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -104,20 +103,20 @@ public class Dbclient implements IFlowStorage{
                     }
                     ResultSet rs = conn.getMetaData().getTables(null, null, "statistic", null);
                     if (rs.next()){
-                        System.out.println("statistic表已建立");
+                        System.out.println("statistic table has been established");
                     }else{
-                        System.out.println("statistic表未建立");
-                        System.out.println("正在建立statistic表");
+                        System.out.println("statistic table is not established");
+                        System.out.println("Creating the statistic table");
                         PreparedStatement pstmtstatistic=null;
                         String statisticSql = this.createstatistictable();
                         pstmtstatistic = conn.prepareStatement(statisticSql,Statement.RETURN_GENERATED_KEYS);
                         conn.setAutoCommit(false);
                         pstmtstatistic.executeUpdate();
                         conn.commit();
-                        System.out.println("statistic表已经建立");
+                        System.out.println("statistic table has been established");
                     }
                 } catch (SQLException e) {
-                    System.out.println("数据库连接出错");
+                    System.out.println("Database connection error");
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -127,20 +126,20 @@ public class Dbclient implements IFlowStorage{
                     }
                     ResultSet rs = conn.getMetaData().getTables(null, null, "match", null);
                     if (rs.next()){
-                        System.out.println("match表已建立");
+                        System.out.println("match table has been established");
                     }else{
-                        System.out.println("match表未建立");
-                        System.out.println("正在建立match表");
+                        System.out.println("match table is not established");
+                        System.out.println("Creating the match table");
                         PreparedStatement pstmtmatch=null;
                         String matchSql = this.creatematchtable();
                         pstmtmatch = conn.prepareStatement(matchSql,Statement.RETURN_GENERATED_KEYS);
                         conn.setAutoCommit(false);
                         pstmtmatch.executeUpdate();
                         conn.commit();
-                        System.out.println("match表已经建立");
+                        System.out.println("match table has been established");
                     }
                 } catch (SQLException e) {
-                    System.out.println("数据库连接出错");
+                    System.out.println("Database connection error");
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -150,10 +149,10 @@ public class Dbclient implements IFlowStorage{
                     }
                     ResultSet rs = conn.getMetaData().getTables(null, null, "flow", null);
                     if (rs.next()){
-                        System.out.println("flow表已建立");
+                        System.out.println("flow table has been established");
                     }else{
-                        System.out.println("flow表未建立");
-                        System.out.println("正在建立flow表");
+                        System.out.println("flow is not established");
+                        System.out.println("Creating the flow table");
                         PreparedStatement pstmtflow=null;
                         String flowSql = this.createflowtable();
                         pstmtflow = conn.prepareStatement(flowSql,Statement.RETURN_GENERATED_KEYS);
@@ -165,16 +164,16 @@ public class Dbclient implements IFlowStorage{
                         conn.setAutoCommit(false);
                         pstmtflowkey.executeUpdate();
                         conn.commit();
-                        System.out.println("flow表已经建立");
+                        System.out.println("flow table has been established");
                     }
                 } catch (SQLException e) {
-                    System.out.println("数据库连接出错");
+                    System.out.println("Database connection error");
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                System.out.println("加载驱动失败");
-                e.printStackTrace();//鎵撳嵃鍑洪敊璇︾粏淇℃伅
+                System.out.println("Load the driver failed");
+                e.printStackTrace();
                 log.info("dongliang: mysql init fail");
             }
         }
@@ -185,7 +184,7 @@ public class Dbclient implements IFlowStorage{
                  password = "hou";
                  conn = DriverManager.getConnection(url,user,password);
             } catch (SQLException e) {
-                System.out.println("数据库连接错误");
+                System.out.println("Database connection error");
                 e.printStackTrace();
                 return null;
             }
@@ -199,7 +198,7 @@ public class Dbclient implements IFlowStorage{
                   conn = null;
              }
             } catch(Exception e) {
-             System.out.println("鏁版嵁搴撳叧闂敊璇�");
+             System.out.println("Database connection error");
              e.printStackTrace();
             }
         }
