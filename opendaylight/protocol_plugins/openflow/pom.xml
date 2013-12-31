@@ -29,6 +29,8 @@
         <configuration>
           <instructions>
             <Import-Package>
+              org.opendaylight.controller.flowstoragemanager,
+              org.opendaylight.controller.forwardingrulesmanager,
               org.opendaylight.controller.sal.packet,
               org.opendaylight.controller.sal.action,
               org.opendaylight.controller.sal.discovery,
@@ -84,6 +86,16 @@
     <dependency>
       <groupId>equinoxSDK381</groupId>
       <artifactId>org.eclipse.osgi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.opendaylight.controller</groupId>
+      <artifactId>flowstoragemanager</artifactId>
+      <version>0.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.opendaylight.controller</groupId>
+      <artifactId>forwardingrulesmanager</artifactId>
+      <version>0.5.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.opendaylight.controller.thirdparty</groupId>

@@ -28,6 +28,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.opendaylight.controller.flowstoragemanager.IFlowUpdateListener;
+import org.opendaylight.controller.forwardingrulesmanager.IReceiveflowid;
 import org.opendaylight.controller.clustering.services.CacheConfigException;
 import org.opendaylight.controller.clustering.services.CacheExistException;
 import org.opendaylight.controller.clustering.services.ICacheUpdateAware;
@@ -68,6 +70,7 @@ import org.opendaylight.controller.sal.utils.GlobalConstants;
 import org.opendaylight.controller.sal.utils.IObjectReader;
 import org.opendaylight.controller.sal.utils.ObjectReader;
 import org.opendaylight.controller.sal.utils.ObjectWriter;
+import org.opendaylight.controller.sal.utils.ServiceHelper;
 import org.opendaylight.controller.sal.utils.Status;
 import org.opendaylight.controller.sal.utils.StatusCode;
 import org.opendaylight.controller.switchmanager.IInventoryListener;
@@ -91,7 +94,8 @@ public class ForwardingRulesManager implements
         IInventoryListener,
         IObjectReader,
         ICacheUpdateAware<Object,Object>,
-        IFlowProgrammerListener {
+        IFlowProgrammerListener,
+        IReceiveflowid {
 
     private static final Logger log = LoggerFactory.getLogger(ForwardingRulesManager.class);
     private static final Logger logsync = LoggerFactory.getLogger("FRMsync");
@@ -108,6 +112,7 @@ public class ForwardingRulesManager implements
     private IContainerManager containerManager;
     private boolean inContainerMode; // being used by global instance only
     protected boolean stopping;
+    public long flowid;
 
     /*
      * Flow database. It's the software view of what was requested to install
@@ -822,9 +827,11 @@ public class ForwardingRulesManager implements
      * Update the node mapped flows database
      */
     private void updateSwViews(FlowEntryInstall flowEntries, boolean add) {
+        IFlowUpdateListener flowstoremgr = (IFlowUpdateListener) ServiceHelper.getGlobalInstance(IFlowUpdateListener.class, this);
         if (add) {
             originalSwView.put(flowEntries.getOriginal(), flowEntries.getOriginal());
             installedSwView.put(flowEntries, flowEntries);
+            flowstoremgr.writeflowEntry(flowEntries.getInstall());
         } else {
             originalSwView.remove(flowEntries.getOriginal());
             installedSwView.remove(flowEntries);
@@ -2897,6 +2904,7 @@ public class ForwardingRulesManager implements
         FlowEntryInstall test = new FlowEntryInstall(new FlowEntry("", "", flow, node), null);
         FlowEntryInstall installedEntry = this.installedSwView.get(test);
         if (installedEntry == null) {
+            flowid = test.getInstall().hashCode();
             log.trace("Entry is not known to us");
             return;
         }
@@ -2920,7 +2928,11 @@ public class ForwardingRulesManager implements
         }
 
         // Update software views
+        flowid = installedEntry.getInstall().hashCode();
         this.updateSwViews(installedEntry, false);
+    }
+    public long sendflowid (){
+        return this.flowid;
     }
 
     @Override
