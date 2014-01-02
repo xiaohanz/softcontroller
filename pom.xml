@@ -87,6 +87,7 @@
     <!--  Web bundles -->
     <module>opendaylight/web/root</module>
     <module>opendaylight/web/flows</module>
+    <module>opendaylight/web/firewall</module>
     <module>opendaylight/web/devices</module>
     <module>opendaylight/web/troubleshoot</module>
     <module>opendaylight/web/topology</module>

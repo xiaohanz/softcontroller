@@ -547,8 +547,6 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
                 if(Integer.valueOf(prio).intValue()<Integer.valueOf(priority).intValue()){
                     priority=prio;
                     matched_rule=conf;
-                }else{
-                    matched_rule=conf;
                 }
             }
         }
@@ -614,7 +612,11 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
                     long dMac_val = BitBufferHelper.toNumber(dMac);
                     dMacConnector=this.mac_to_port_per_switch.get(dHostN).get(dMac_val);
                     if (dMacConnector!=null){
-                        actionList.add(new Output(dMacConnector));
+                        if(!dMacConnector.equals(incoming_connector)){
+                            actionList.add(new Output(dMacConnector));
+                        }else{
+                            log.debug("dMacConnector equals incoming_connector!");
+                        }
                     }else{
                         return new Status(StatusCode.NOTFOUND);
                     }
