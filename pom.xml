@@ -32,6 +32,8 @@
     <module>opendaylight/configuration/implementation</module>
     <module>opendaylight/routing/dijkstra_implementation</module>
     <module>opendaylight/arphandler</module>
+    <module>opendaylight/firewall/api</module>
+    <module>opendaylight/firewall/implementation</module>
     <module>opendaylight/flowmanager/api</module>
     <module>opendaylight/flowmanager/implementation</module>
     <module>opendaylight/l2forwardingmanager</module>
@@ -85,6 +87,7 @@
     <!--  Web bundles -->
     <module>opendaylight/web/root</module>
     <module>opendaylight/web/flows</module>
+    <module>opendaylight/web/firewall</module>
     <module>opendaylight/web/devices</module>
     <module>opendaylight/web/troubleshoot</module>
     <module>opendaylight/web/topology</module>
@@ -102,6 +105,7 @@
     <module>opendaylight/northbound/topology</module>
     <module>opendaylight/northbound/staticrouting</module>
     <module>opendaylight/northbound/statistics</module>
+    <module>opendaylight/northbound/firewall</module>
     <module>opendaylight/northbound/flowprogrammer</module>
     <module>opendaylight/northbound/hosttracker</module>
     <module>opendaylight/northbound/subnets</module>
