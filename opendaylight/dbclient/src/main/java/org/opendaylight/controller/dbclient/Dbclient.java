@@ -27,7 +27,6 @@ public class Dbclient implements IFlowStorage{
                 //java.sql.DriverManager.registerDriver(new Driver());
                 Class.forName("com.mysql.jdbc.Driver").newInstance();
                 System.out.println("********************"+'\n'+'\n'+'\n'+'\n');
-                log.info("dongliang: mysql init ok");
                 try {
                     if(conn == null){
                         this.connectDb();
@@ -47,7 +46,7 @@ public class Dbclient implements IFlowStorage{
                         System.out.println("action table has been established");
                     }
                 } catch (SQLException e) {
-                    System.out.println("Database connection error");
+                    System.out.println("Database connection load failure");
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -70,7 +69,7 @@ public class Dbclient implements IFlowStorage{
                         System.out.println("nodetype table has been established");
                     }
                 } catch (SQLException e) {
-                    System.out.println("Database connection error");
+                    System.out.println("Database connection load failure");
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -93,7 +92,7 @@ public class Dbclient implements IFlowStorage{
                         System.out.println("protocol table has been established");
                     }
                 } catch (SQLException e) {
-                    System.out.println("Database connection error");
+                    System.out.println("Database connection load failure");
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -116,7 +115,7 @@ public class Dbclient implements IFlowStorage{
                         System.out.println("statistic table has been established");
                     }
                 } catch (SQLException e) {
-                    System.out.println("Database connection error");
+                    System.out.println("Database connection load failure");
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -139,7 +138,7 @@ public class Dbclient implements IFlowStorage{
                         System.out.println("match table has been established");
                     }
                 } catch (SQLException e) {
-                    System.out.println("Database connection error");
+                    System.out.println("Database connection load failure");
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -167,14 +166,13 @@ public class Dbclient implements IFlowStorage{
                         System.out.println("flow table has been established");
                     }
                 } catch (SQLException e) {
-                    System.out.println("Database connection error");
+                    System.out.println("Database connection load failure");
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 System.out.println("Load the driver failed");
                 e.printStackTrace();
-                log.info("dongliang: mysql init fail");
             }
         }
         //connect to mySql server
@@ -184,7 +182,7 @@ public class Dbclient implements IFlowStorage{
                  password = "hou";
                  conn = DriverManager.getConnection(url,user,password);
             } catch (SQLException e) {
-                System.out.println("Database connection error");
+                System.out.println("Database connection load failure");
                 e.printStackTrace();
                 return null;
             }
@@ -198,7 +196,7 @@ public class Dbclient implements IFlowStorage{
                   conn = null;
              }
             } catch(Exception e) {
-             System.out.println("Database connection error");
+             System.out.println("Database connection load failure");
              e.printStackTrace();
             }
         }
@@ -246,7 +244,7 @@ public class Dbclient implements IFlowStorage{
         }
         public String createflowtable(){
             String flowSql;
-            flowSql="create table `flow`(`flow_id` bigint(20) NOT NULL,`node_id` varchar(30),`node_type` int(20),`entry_priority` smallint(11),`actions` int(225),`match_id` int(225),`statistic_id` int(11),`idleTimeout` datetime DEFAULT NULL,`hardTimeout` datetime DEFAULT NULL,`cookie` text  DEFAULT NULL, PRIMARY KEY(`flow_id`),INDEX (`node_type`),FOREIGN KEY(node_type) references nodetype(type_id) on delete cascade on update cascade,INDEX (`actions`),FOREIGN KEY(actions) references action(action_id) on delete cascade on update cascade,INDEX (`statistic_id`),FOREIGN KEY(statistic_id) references statistic(statistic_id) on delete cascade on update cascade)DEFAULT CHARSET=utf8";
+            flowSql="create table `flow`(`id` bigint(20) NOT NULL AUTO_INCREMENT,`flow_id` bigint(20),`node_id` varchar(30),`node_type` int(20),`entry_priority` smallint(11),`actions` int(225),`match_id` int(225),`statistic_id` int(11),`idleTimeout` datetime DEFAULT NULL,`hardTimeout` datetime DEFAULT NULL,`cookie` text  DEFAULT NULL, PRIMARY KEY(`id`),INDEX (`node_type`),FOREIGN KEY(node_type) references nodetype(type_id) on delete cascade on update cascade,INDEX (`actions`),FOREIGN KEY(actions) references action(action_id) on delete cascade on update cascade,INDEX (`statistic_id`),FOREIGN KEY(statistic_id) references statistic(statistic_id) on delete cascade on update cascade)DEFAULT CHARSET=utf8";
             return flowSql;
         }
         public String createflowkeytable(){
