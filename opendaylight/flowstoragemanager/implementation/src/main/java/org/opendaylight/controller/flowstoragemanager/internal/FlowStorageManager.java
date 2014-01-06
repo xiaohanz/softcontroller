@@ -79,6 +79,7 @@ public class FlowStorageManager implements
     private String reason;
     private long packet;
     private int restatisticid;
+    private long reid;
     ArrayList<FlowEntry> flowDB1 = new ArrayList<FlowEntry>();
     ArrayList<FlowEntry> flowDB2 = new ArrayList<FlowEntry>();
     private int Switch =0;
@@ -256,7 +257,12 @@ public class FlowStorageManager implements
     }
     private String generategetstatisticidSql(){
         String getidSql;
-        getidSql = "SELECT "+ "statistic_id"+" "+ "FROM "+"`"+"flow"+"`"+" "+"WHERE "+ "flow_id="+reflowid ;
+        getidSql = "SELECT "+ "statistic_id"+" "+ "FROM "+"`"+"flow"+"`"+" "+"WHERE "+ "id="+reid ;
+        return getidSql;
+    }
+    private String generategetflowidSql(){
+        String getidSql;
+        getidSql = "SELECT "+ "id "+" "+ "FROM "+"`"+"flow"+"`"+" "+"WHERE "+ "flow_id="+reflowid+" "+"order by id desc limit 1" ;
         return getidSql;
     }
     private void parseFlowEntry(FlowEntry flowEntry){
@@ -379,7 +385,7 @@ public class FlowStorageManager implements
              }
          },time, 1000 * 60 * 60 * 24);
     }
-    public int addFlowEntry(FlowEntry flowEntry){
+    public void addFlowEntry(FlowEntry flowEntry){
          String matchSql, flowSql ,actionSql ,protocolSql ,nodetypeSql, statisticSql;
          PreparedStatement pstmtMatch=null;
          PreparedStatement pstmtFlow=null;
@@ -456,7 +462,6 @@ public class FlowStorageManager implements
              }catch(SQLException e) {
                  System.out.println("SQLException");
              }
-     return 1;
     }
 
     /**
@@ -479,8 +484,10 @@ public class FlowStorageManager implements
          packet = Packet;
          String getidSql;
          String updateSql;
+         String getflowidSql;
          PreparedStatement pstmtupdate=null;
          PreparedStatement pstmtgetidSql = null;
+         PreparedStatement pstmtgetflowidSql = null;
          if (dbstorage == null) {
              System.out.println("Drive error");
          } else{
@@ -490,8 +497,19 @@ public class FlowStorageManager implements
                  conn = dbstorage.connectDb();
              }
              //generate update flow entry stop time sql
-             getidSql = generategetstatisticidSql();
+             getflowidSql = generategetflowidSql();
              try{
+                 conn.setAutoCommit(false);
+                 conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+                 pstmtgetflowidSql = conn.prepareStatement(getflowidSql);
+                 rs = pstmtgetflowidSql.executeQuery();
+                 //System.out.println("The value is ");
+                 if(rs.next()) {
+                     //System.out.println(rs.getInt(1));
+                     //get returned max match_id
+                     reid =  rs.getInt(1);
+                 }
+                 getidSql = generategetstatisticidSql();
                  conn.setAutoCommit(false);
                  conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
                  pstmtgetidSql = conn.prepareStatement(getidSql);

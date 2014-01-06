@@ -41,7 +41,6 @@ import org.opendaylight.controller.sal.match.MatchType;
 import org.opendaylight.controller.sal.utils.GlobalConstants;
 import org.opendaylight.controller.sal.utils.HexEncode;
 import org.opendaylight.controller.sal.utils.NodeCreator;
-import org.opendaylight.controller.sal.utils.ServiceHelper;
 import org.opendaylight.controller.sal.utils.Status;
 import org.opendaylight.controller.sal.utils.StatusCode;
 import org.openflow.protocol.OFError;
@@ -71,6 +70,8 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
     private ConcurrentMap<Long, Map<Integer, Long>> xid2rid;
     private int barrierMessagePriorCount = getBarrierMessagePriorCount();
     private IPluginOutConnectionService connectionOutService;
+    private IReceiveflowid receiveflowid;
+    private IFlowUpdateListener flowupdate;
     private long Byte;
     private int DurationSeconds;
     private int DurationNanoseconds;
@@ -85,7 +86,6 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
         containerToNc = new HashMap<String, Set<NodeConnector>>();
         xid2rid = new ConcurrentHashMap<Long, Map<Integer, Long>>();
     }
-
     public void setController(IController core) {
         this.controller = core;
     }
@@ -105,7 +105,22 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
             connectionOutService = null;
         }
     }
-
+    void setIReceiveflowidService(IReceiveflowid flowid){
+        receiveflowid = flowid;
+    }
+    void unIReceiveflowidService(IReceiveflowid flowid){
+        if(receiveflowid == flowid){
+            receiveflowid = null;
+        }
+    }
+    void setIFlowUpdateListenerService(IFlowUpdateListener update){
+        flowupdate = update;
+    }
+    void unIFlowUpdateListenerService(IFlowUpdateListener update){
+        if(flowupdate == update){
+            flowupdate = null;
+        }
+    }
     public void setFlowProgrammerNotifier(Map<String, ?> props,
             IFlowProgrammerNotifier s) {
         if (props == null || props.get("containerName") == null) {
@@ -405,8 +420,6 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
         DurationNanoseconds = msg.getDurationNanoseconds();
         Reason = msg.getReason().toString();
         Packet = msg.getPacketCount();
-        IReceiveflowid receiveflowid = (IReceiveflowid) ServiceHelper.getGlobalInstance(IReceiveflowid.class, this);
-        IFlowUpdateListener flowupdate = (IFlowUpdateListener) ServiceHelper.getGlobalInstance(IFlowUpdateListener.class, this);
         id = receiveflowid.sendflowid();
         flowupdate.updateFlowEntry(Byte, DurationSeconds, DurationNanoseconds, Reason, Packet, id);
     }

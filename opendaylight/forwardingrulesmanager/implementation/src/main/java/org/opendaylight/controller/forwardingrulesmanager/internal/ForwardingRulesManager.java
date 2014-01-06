@@ -113,7 +113,15 @@ public class ForwardingRulesManager implements
     private boolean inContainerMode; // being used by global instance only
     protected boolean stopping;
     public long flowid;
-
+    private IFlowUpdateListener flowstoremgr;
+    void setIFlowUpdateListenerService (IFlowUpdateListener storemgr){
+        flowstoremgr = storemgr;
+    }
+    void unIFlowUpdateListenerService (IFlowUpdateListener storemgr){
+        if(flowstoremgr == storemgr){
+            flowstoremgr = null;
+        }
+    }
     /*
      * Flow database. It's the software view of what was requested to install
      * and what is installed on the switch. It is indexed by the entry itself.
