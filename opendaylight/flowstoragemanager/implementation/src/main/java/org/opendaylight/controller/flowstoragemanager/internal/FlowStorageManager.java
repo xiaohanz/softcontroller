@@ -349,7 +349,7 @@ public class FlowStorageManager implements
     }
     public void addFlowList(ArrayList<FlowEntry> flowDB){
         if (dbstorage == null) {
-            System.out.println("Drive error");
+            System.out.println("Drive load failure");
         } else{
             if(conn == null){
                 conn = dbstorage.connectDb();
@@ -489,7 +489,7 @@ public class FlowStorageManager implements
          PreparedStatement pstmtgetidSql = null;
          PreparedStatement pstmtgetflowidSql = null;
          if (dbstorage == null) {
-             System.out.println("Drive error");
+             System.out.println("Drive load failure");
          } else{
              stopTime = getSysTime();
              //if not connect with database then try connect
@@ -538,7 +538,7 @@ public class FlowStorageManager implements
                          pstmtupdate = null;
                      }
                  } catch(SQLException e) {
-                     System.out.println("Database connection error");
+                     System.out.println("Database connection load failure");
                  }
              }
      }
