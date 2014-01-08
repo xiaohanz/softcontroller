@@ -1,14 +1,5 @@
 
 
-/*
- * Copyright (c) 2013 Cisco Systems, Inc. and others.  All rights reserved.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v1.0 which accompanies this distribution,
- * and is available at http://www.eclipse.org/legal/epl-v10.html
- */
-
-
 package org.opendaylight.controller.firewall.internal;
 import java.util.Dictionary;
 import java.util.HashSet;
@@ -20,9 +11,12 @@ import org.opendaylight.controller.clustering.services.IClusterContainerServices
 import org.opendaylight.controller.configuration.IConfigurationContainerAware;
 import org.opendaylight.controller.firewall.IFirewall;
 import org.opendaylight.controller.forwardingrulesmanager.IForwardingRulesManager;
-import org.opendaylight.controller.hosttracker.IfIptoHost;import org.opendaylight.controller.sal.core.ComponentActivatorAbstractBase;
+import org.opendaylight.controller.hosttracker.IfIptoHost;
+import org.opendaylight.controller.hosttracker.IfNewHostNotify;
+import org.opendaylight.controller.sal.core.ComponentActivatorAbstractBase;
 import org.opendaylight.controller.sal.packet.IDataPacketService;
 import org.opendaylight.controller.sal.packet.IListenDataPacket;
+import org.opendaylight.controller.switchmanager.IInventoryListener;
 import org.opendaylight.controller.switchmanager.ISwitchManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,8 +63,11 @@ public class Activator extends ComponentActivatorAbstractBase {
             props.put("salListenerName", "firewall");
             Set<String> propSet = new HashSet<String>();
             propSet.add(Firewall.FIREWALL_EVENT_CACHE_NAME);
-            props.put("cachename", propSet);
-            c.setInterface(new String[] {IFirewall.class.getName(), IConfigurationContainerAware.class.getName(),IListenDataPacket.class.getName()},props);
+//            props.put("cachename", propSet);
+//            c.setInterface(new String[] {IFirewall.class.getName(), IConfigurationContainerAware.class.getName(),IListenDataPacket.class.getName(),IInventoryListener.class.getName(),
+//                    IfNewHostNotify.class.getName()},props);
+            c.setInterface(new String[] {IFirewall.class.getName(), IConfigurationContainerAware.class.getName(),IListenDataPacket.class.getName(),IInventoryListener.class.getName(),
+                  IfNewHostNotify.class.getName()}, props);
         }
         c.add(createContainerServiceDependency(containerName).setService(
                 IClusterContainerServices.class).setCallbacks(

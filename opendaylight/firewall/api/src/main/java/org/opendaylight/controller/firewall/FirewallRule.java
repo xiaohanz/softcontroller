@@ -23,7 +23,6 @@ import org.opendaylight.controller.sal.core.NodeConnector;
 import org.opendaylight.controller.sal.flowprogrammer.Flow;
 import org.opendaylight.controller.sal.match.Match;
 import org.opendaylight.controller.sal.match.MatchType;
-import org.opendaylight.controller.sal.packet.BitBufferHelper;
 import org.opendaylight.controller.sal.packet.Ethernet;
 import org.opendaylight.controller.sal.packet.IPv4;
 import org.opendaylight.controller.sal.packet.Packet;
@@ -573,6 +572,8 @@ public class FirewallRule implements Serializable{
         Flow flow = new Flow(match, actionList);
         flow.setMatch(match);
         flow.setActions(actionList);
+//        short hardTime=120;
+//        flow.setHardTimeout(hardTime);
         if (this.priority != null) {
             flow.setPriority(Integer.decode(priority).shortValue());
         }
@@ -590,10 +591,20 @@ public class FirewallRule implements Serializable{
         Ethernet eHeader=(Ethernet) pak;
         byte[] dMac=eHeader.getDestinationMACAddress();
         byte[] sMac=eHeader.getSourceMACAddress();
-        String srcMac=String.valueOf(BitBufferHelper.toNumber(sMac));
-        String dstMac=String.valueOf(BitBufferHelper.toNumber(dMac));
+        String srcMac=macByteToString(sMac);
+        String dstMac=macByteToString(dMac);
         String etherType=EtherTypes.getEtherTypeName(eHeader.getEtherType());
-        String rdlSrc="";
+        if (this.dlSrc!=null){
+            if(!this.dlSrc.equalsIgnoreCase(srcMac)){
+                return false;
+            }
+        }
+        if (this.dlDst!=null){
+            if(!this.dlDst.equalsIgnoreCase(dstMac)){
+                return false;
+            }
+        }
+      /*String rdlSrc="";
         String rdlDst="";
         if (this.dlSrc!=null){
             String dSrc=this.getDlSrc().trim();
@@ -620,7 +631,7 @@ public class FirewallRule implements Serializable{
             if (!rdlDst.equals(dstMac)){
                 return false;
             }
-        }
+        }*/
         //get src/dst ip,nw protocol
         IPv4 pkt = (IPv4)pak.getPayload();
         String protocol = IPProtocols.getProtocolName(pkt.getProtocol());
@@ -644,8 +655,8 @@ public class FirewallRule implements Serializable{
         }else if(protocol.equals(IPProtocols.ICMP.toString())){
         }
         //get dispatch host ip mac
-        boolean flag=false;
-/**        HostNodeConnector tHost=this.getTransHost();
+/**        boolean flag=false;
+        HostNodeConnector tHost=this.getTransHost();
         byte[] tMac=null;
         InetAddress tIp=null;
         if (tHost!=null){
@@ -685,17 +696,17 @@ public class FirewallRule implements Serializable{
             dstMac, srcIp.getHostAddress(), dstIp.getHostAddress(), protocol,
             srcPort, dstPort, null, null);
         //change rule
-        if (flag==false){
+    /**         if (flag==false){
 
-    /**        String rnwSrc=this.getNwSrc();
+       String rnwSrc=this.getNwSrc();
             String rnwDst=this.getNwDst();
             if (this.nwSrc!=null&&srcIp.getHostAddress().equals(rnwSrc)){
                 return false;
             }
             if (this.nwDst!=null&&dstIp.getHostAddress().equals(rnwDst)){
                 return false;
-            }*/
-        }
+            }
+        }*/
         // compare rule with pktRule
         if (this.etherType==null||pktRule.getEtherType().equals(this.getEtherTypeName()))
             if (this.nwSrc==null||pktRule.getNwSrc().equals(this.getNwSrc()))
@@ -715,4 +726,17 @@ public class FirewallRule implements Serializable{
         }
         return true;
      }
+    public static String macByteToString(byte[] mac){
+        String s=null;
+        String macString="";
+        for (int i=0;i<mac.length;i++){
+            int emac=mac[i]&0xff;
+            s=Integer.toString(emac, 16);
+            if (emac<16&&emac>-1){
+                s="0"+s;
+            }
+            macString=macString+":"+s;
+        }
+        return macString.substring(1);
+    }
 }

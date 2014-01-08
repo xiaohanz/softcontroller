@@ -26,14 +26,14 @@ public interface IFirewall {
     /**
      *
      * @param containerName
-     * @param name
+     * @param id
      * @return
      */
-    public FirewallRule getFirewallRule(String name);
+    public FirewallRule getFirewallRule(String id);
     /**
      *
      * @param containerName
-     * @param name
+     * @param id
      * @return
      */
     public Status removeFirewallRule(String id);
