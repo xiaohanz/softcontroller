@@ -455,5 +455,15 @@ public interface IForwardingRulesManager {
      * @return the list of container flow merged flow entries belonging to the specified node
      */
     public List<FlowEntry> getInstalledFlowEntriesForNode(Node node);
+    /**
+     * Returns this list of FirewallRule entry
+     * @return
+     */
+    public List<FlowEntry> getFirewallEntry();
+    /**
+     * Clear this list of FirewallRule entry
+     */
+    public void clearFirewallEntryList();
+
 
 }

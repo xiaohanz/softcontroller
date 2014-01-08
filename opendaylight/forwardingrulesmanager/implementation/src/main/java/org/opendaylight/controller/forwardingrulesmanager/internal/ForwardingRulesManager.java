@@ -108,6 +108,8 @@ public class ForwardingRulesManager implements
     private IContainerManager containerManager;
     private boolean inContainerMode; // being used by global instance only
     protected boolean stopping;
+    public List<FlowEntry> entryList = new ArrayList<FlowEntry>();
+
 
     /*
      * Flow database. It's the software view of what was requested to install
@@ -2164,9 +2166,28 @@ public class ForwardingRulesManager implements
         }
         return false;
     }
-
+    @Override
+    public List<FlowEntry> getFirewallEntry(){
+        return entryList;
+    }
+    @Override
+    public void clearFirewallEntryList(){
+        entryList.clear();
+    }
     @Override
     public void notifyNode(Node node, UpdateType type, Map<String, Property> propMap) {
+        switch(type){
+        case REMOVED:
+            String policyName ="FirewallRule";
+            for (Map.Entry<FlowEntry, FlowEntry> entry : this.originalSwView.entrySet()) {
+                if (policyName.equals(entry.getKey().getGroupName())) {
+                    entryList.add(entry.getKey().clone());
+                }
+            }
+            break;
+        default:
+            break;
+        }
         this.pendingEvents.offer(new NodeUpdateEvent(type, node));
     }
 
@@ -2183,6 +2204,7 @@ public class ForwardingRulesManager implements
                 switch (config.getValue()) {
                 case Config.ADMIN_DOWN:
                     log.trace("Port {} is administratively down: uninstalling interested flows", nodeConnector);
+                    entryList=getFlowEntriesForNode(nodeConnector.getNode());
                     updateStaticFlowCluster = removeFlowsOnNodeConnectorDown(nodeConnector);
                     break;
                 case Config.ADMIN_UP:
@@ -2198,6 +2220,7 @@ public class ForwardingRulesManager implements
         case REMOVED:
             // This is the case where a switch port is removed from the SDN agent space
             log.trace("Port {} was removed from our control: uninstalling interested flows", nodeConnector);
+            entryList=getFlowEntriesForNode(nodeConnector.getNode());
             updateStaticFlowCluster = removeFlowsOnNodeConnectorDown(nodeConnector);
             break;
         default:
