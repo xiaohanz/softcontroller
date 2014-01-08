@@ -32,18 +32,22 @@ import org.opendaylight.controller.firewall.FirewallRule.ActionType;
 import org.opendaylight.controller.forwardingrulesmanager.FlowEntry;
 import org.opendaylight.controller.forwardingrulesmanager.IForwardingRulesManager;
 import org.opendaylight.controller.hosttracker.IfIptoHost;
+import org.opendaylight.controller.hosttracker.IfNewHostNotify;
 import org.opendaylight.controller.hosttracker.hostAware.HostNodeConnector;
 import org.opendaylight.controller.sal.action.Action;
 import org.opendaylight.controller.sal.action.Drop;
 import org.opendaylight.controller.sal.action.Output;
+import org.opendaylight.controller.sal.core.Config;
 import org.opendaylight.controller.sal.core.ConstructionException;
 import org.opendaylight.controller.sal.core.Node;
 import org.opendaylight.controller.sal.core.NodeConnector;
+import org.opendaylight.controller.sal.core.Property;
+import org.opendaylight.controller.sal.core.UpdateType;
+import org.opendaylight.controller.sal.flowprogrammer.Flow;
 import org.opendaylight.controller.sal.match.Match;
 import org.opendaylight.controller.sal.match.MatchField;
 import org.opendaylight.controller.sal.match.MatchType;
 import org.opendaylight.controller.sal.packet.ARP;
-import org.opendaylight.controller.sal.packet.BitBufferHelper;
 import org.opendaylight.controller.sal.packet.Ethernet;
 import org.opendaylight.controller.sal.packet.IDataPacketService;
 import org.opendaylight.controller.sal.packet.IEEE8021Q;
@@ -60,13 +64,14 @@ import org.opendaylight.controller.sal.utils.ObjectReader;
 import org.opendaylight.controller.sal.utils.ObjectWriter;
 import org.opendaylight.controller.sal.utils.Status;
 import org.opendaylight.controller.sal.utils.StatusCode;
+import org.opendaylight.controller.switchmanager.IInventoryListener;
 import org.opendaylight.controller.switchmanager.ISwitchManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Firewall implements IFirewall, IObjectReader, IConfigurationContainerAware,IListenDataPacket{
+public class Firewall implements IFirewall, IObjectReader, IConfigurationContainerAware,IListenDataPacket,IInventoryListener,IfNewHostNotify{
     private IForwardingRulesManager frm;
     private IfIptoHost hostTracker;
     private ExecutorService executor;
@@ -76,7 +81,8 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
     private Map<String,String> id_ruleName=new HashMap<String,String>();
     private IClusterContainerServices clusterContainerService = null;
     private IDataPacketService dataPacketService;
-    private Map<Node, Map<Long, NodeConnector>> mac_to_port_per_switch = new HashMap<Node, Map<Long, NodeConnector>>();
+    private Map<Node, Map<String, NodeConnector>> mac_to_port_per_switch = new HashMap<Node, Map<String, NodeConnector>>();
+    private Map<String,String> value = new HashMap<String,String>();
     private static String ROOT = GlobalConstants.STARTUPHOME.toString();
     private String firewallFileName = null;
     protected boolean enabled;
@@ -248,7 +254,6 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
                 }
             }else{
                 log.info("flowentry list is null");
-                status= new Status(StatusCode.NOTFOUND);
             }
         }
         if(!status.isSuccess()){
@@ -467,12 +472,12 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
             Object nextPak = formattedPak.getPayload();
             if (nextPak instanceof IPv4&&!((Ethernet)formattedPak).isBroadcast()) {
                 byte[] srcMAC = ((Ethernet)formattedPak).getSourceMACAddress();
-                long srcMAC_val = BitBufferHelper.toNumber(srcMAC);
+                String srcMAC_string = FirewallRule.macByteToString(srcMAC);
                 // Set up the mapping: switch -> src MAC address -> incoming port
                 if (this.mac_to_port_per_switch.get(incoming_node) == null) {
-                    this.mac_to_port_per_switch.put(incoming_node, new HashMap<Long, NodeConnector>());
+                    this.mac_to_port_per_switch.put(incoming_node, new HashMap<String, NodeConnector>());
                 }
-                this.mac_to_port_per_switch.get(incoming_node).put(srcMAC_val, incoming_connector);
+                this.mac_to_port_per_switch.get(incoming_node).put(srcMAC_string, incoming_connector);
                 if (this.enabled!=true){
                     log.trace("Firewall disabled");
                     return PacketResult.IGNORED;
@@ -547,8 +552,6 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
                 if(Integer.valueOf(prio).intValue()<Integer.valueOf(priority).intValue()){
                     priority=prio;
                     matched_rule=conf;
-                }else{
-                    matched_rule=conf;
                 }
             }
         }
@@ -559,21 +562,21 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         Node incoming_node = incoming_connector.getNode();
         byte[] srcMAC = ((Ethernet)formattedPak).getSourceMACAddress();
         byte[] dstMAC = ((Ethernet)formattedPak).getDestinationMACAddress();
-        long srcMAC_val = BitBufferHelper.toNumber(srcMAC);
-        long dstMAC_val = BitBufferHelper.toNumber(dstMAC);
+        String srcMAC_string = FirewallRule.macByteToString(srcMAC);
+        String dstMAC_string = FirewallRule.macByteToString(dstMAC);
         Match match = new Match();
         match.setField( new MatchField(MatchType.IN_PORT, incoming_connector) );
         match.setField( new MatchField(MatchType.DL_DST, dstMAC.clone()) );
         // Set up the mapping: switch -> src MAC address -> incoming port
         if (this.mac_to_port_per_switch.get(incoming_node) == null) {
-            this.mac_to_port_per_switch.put(incoming_node, new HashMap<Long, NodeConnector>());
+            this.mac_to_port_per_switch.put(incoming_node, new HashMap<String, NodeConnector>());
         }
-        this.mac_to_port_per_switch.get(incoming_node).put(srcMAC_val, incoming_connector);
+        this.mac_to_port_per_switch.get(incoming_node).put(srcMAC_string, incoming_connector);
 
-        NodeConnector dst_connector = this.mac_to_port_per_switch.get(incoming_node).get(dstMAC_val);
+        NodeConnector dst_connector = this.mac_to_port_per_switch.get(incoming_node).get(dstMAC_string);
         // Do I know the destination MAC?
         if (dst_connector != null) {
-            this.mac_to_port_per_switch.get(dst_connector.getNode()).put(dstMAC_val, dst_connector);
+            this.mac_to_port_per_switch.get(dst_connector.getNode()).put(dstMAC_string, dst_connector);
         }else{
             Set<NodeConnector> nodeConnectors =
                     this.switchManager.getUpNodeConnectors(incoming_node);
@@ -611,10 +614,14 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
                 Node dHostN=incoming_connector.getNode();
                 if (dHost!=null){
                     byte[] dMac=dHost.getDataLayerAddressBytes();
-                    long dMac_val = BitBufferHelper.toNumber(dMac);
-                    dMacConnector=this.mac_to_port_per_switch.get(dHostN).get(dMac_val);
+                    String dMac_string = FirewallRule.macByteToString(dMac);
+                    dMacConnector=this.mac_to_port_per_switch.get(dHostN).get(dMac_string);
                     if (dMacConnector!=null){
-                        actionList.add(new Output(dMacConnector));
+                        if (!dMacConnector.equals(incoming_connector)){
+                            actionList.add(new Output(dMacConnector));
+                        }else{
+                            log.debug("dMacConnector equals incoming_connector");
+                        }
                     }else{
                         return new Status(StatusCode.NOTFOUND);
                     }
@@ -654,5 +661,178 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
             ruleConfigList.get(rule.getRuleId()).setInstallHw("true");
         }
         return new Status(StatusCode.SUCCESS);
+    }
+    @Override
+    public void notifyHTClientHostRemoved(HostNodeConnector host) {
+        if (host == null) {
+            return;
+        }
+        byte[] hMac=host.getDataLayerAddressBytes();
+        String hostMac=FirewallRule.macByteToString(hMac);
+        List<FlowEntry> flowEntrys=frm.getFlowEntriesForGroup("FirewallRule");
+        for (FlowEntry entry: flowEntrys){
+            Match match=entry.getFlow().getMatch();
+            byte[] sMac=(byte[])(match.getField(MatchType.DL_SRC).getValue());
+            byte[] dMac=(byte[])(match.getField(MatchType.DL_DST).getValue());
+            String srcMac=FirewallRule.macByteToString(sMac);
+            String dstMac=FirewallRule.macByteToString(dMac);
+            if (hostMac.equalsIgnoreCase(srcMac)||hostMac.equalsIgnoreCase(dstMac)){
+                frm.uninstallFlowEntry(entry);
+            }
+        }
+        for(Node mac_node : mac_to_port_per_switch.keySet()){
+            Map<String,NodeConnector> mac_connector=mac_to_port_per_switch.get(mac_node);
+            if(mac_connector.containsKey(hostMac)){
+                mac_to_port_per_switch.get(mac_node).remove(hostMac);
+            }
+        }
+    }
+
+    @Override
+    public void notifyHTClient(HostNodeConnector host) {
+        if (host == null){
+            return;
+        }
+    }
+    @Override
+    public void notifyNodeConnector(NodeConnector nodeConnector,
+            UpdateType type, Map<String, Property> propMap) {
+        if (nodeConnector == null)
+            return;
+        switch (type) {
+        case ADDED:
+            break;
+        case REMOVED:
+            removeFlowEntryOnNodeConnectorDown(nodeConnector);
+            break;
+        case CHANGED:
+            Config config = (propMap == null) ? null : (Config) propMap.get(Config.ConfigPropName);
+            if (config != null) {
+                switch (config.getValue()) {
+                case Config.ADMIN_DOWN:
+                    log.trace("Port {} is administratively down: uninstalling interested flows", nodeConnector);
+                    removeFlowEntryOnNodeConnectorDown(nodeConnector);
+                    break;
+                default:
+                }
+            }
+            break;
+        default:
+            return;
+        }
+    }
+    private void removeFlowEntryOnNodeConnectorDown(NodeConnector nodeConnector) {
+        Node node=nodeConnector.getNode();
+        List<FlowEntry> flowEntrys=frm.getFirewallEntry();
+        if(flowEntrys.isEmpty()){
+            flowEntrys=frm.getFlowEntriesForNode(node);
+        }
+        Map<String,Map<String,String>> entryDlMac = new HashMap<String,Map<String,String>>();
+        for (FlowEntry entry: flowEntrys){
+            value = new HashMap<String,String>();
+            Flow flow=entry.getFlow();
+            Match match = flow.getMatch();
+            if (match.isPresent(MatchType.IN_PORT)) {
+                NodeConnector matchPort = (NodeConnector) match.getField(MatchType.IN_PORT).getValue();
+                if (matchPort.equals(nodeConnector)) {
+                    byte[] sMac=(byte[])(match.getField(MatchType.DL_SRC).getValue());
+                    byte[] dMac=(byte[])(match.getField(MatchType.DL_DST).getValue());
+                    String srcMac=FirewallRule.macByteToString(sMac);
+                    String dstMac=FirewallRule.macByteToString(dMac);
+                    value.put(srcMac, dstMac);
+                    String key=entry.getFlowName();
+                    entryDlMac.put(key, value);
+                }
+            }else{
+                List<Action> actions=flow.getActions();
+                if (actions != null) {
+                    for (Action action : actions) {
+                        if (action instanceof Output) {
+                            NodeConnector actionPort = ((Output) action).getPort();
+                            if (actionPort.equals(nodeConnector)) {
+                                byte[] sMac=(byte[])(match.getField(MatchType.DL_SRC).getValue());
+                                byte[] dMac=(byte[])(match.getField(MatchType.DL_DST).getValue());
+                                String srcMac=FirewallRule.macByteToString(sMac);
+                                String dstMac=FirewallRule.macByteToString(dMac);
+                                value.put(srcMac, dstMac);
+                                String key=entry.getFlowName();
+                                entryDlMac.put(key, value);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (!entryDlMac.isEmpty()){
+            Status status=removeEntryBasedOnMaclist(entryDlMac);
+        }
+        if (mac_to_port_per_switch.containsKey(node)){
+            mac_to_port_per_switch.remove(node);
+        }
+        frm.clearFirewallEntryList();
+    }
+    private Status removeEntryBasedOnMaclist(
+            Map<String, Map<String, String>> entryDlMac) {
+        Status status=new Status(StatusCode.SUCCESS);
+        List<FlowEntry> flowEntrys=frm.getFlowEntriesForGroup("FirewallRule");
+        for (FlowEntry entry: flowEntrys){
+            value = new HashMap<String,String>();
+            Match match=entry.getFlow().getMatch();
+            byte[] sMac=(byte[])(match.getField(MatchType.DL_SRC).getValue());
+            byte[] dMac=(byte[])(match.getField(MatchType.DL_DST).getValue());
+            String srcMac=FirewallRule.macByteToString(sMac);
+            String dstMac=FirewallRule.macByteToString(dMac);
+            value.put(srcMac, dstMac);
+            if (entryDlMac.containsValue(value)){
+                status=frm.uninstallFlowEntry(entry);
+            }
+        }
+        return status;
+    }
+    @Override
+    public void notifyNode(Node node, UpdateType type,
+            Map<String, Property> propMap) {
+        if (node == null){
+            return;
+        }
+        switch (type) {
+        case ADDED:
+            break;
+        case REMOVED:
+            List<FlowEntry> flowEntrys=frm.getFirewallEntry();
+            if(flowEntrys.isEmpty()){
+                flowEntrys=frm.getFlowEntriesForGroup("FirewallRule");
+            }
+            Map<String,Map<String,String>> entryDlMac = new HashMap<String,Map<String,String>>();
+            for (FlowEntry entry: flowEntrys){
+                value = new HashMap<String,String>();
+                Node nodeMap=entry.getNode();
+                Object nodeId=node.getID();
+                if (nodeMap.getID().equals(nodeId)){
+                    Match match=entry.getFlow().getMatch();
+                    byte[] sMac=(byte[])(match.getField(MatchType.DL_SRC).getValue());
+                    byte[] dMac=(byte[])(match.getField(MatchType.DL_DST).getValue());
+                    String srcMac=FirewallRule.macByteToString(sMac);
+                    String dstMac=FirewallRule.macByteToString(dMac);
+                    value.put(srcMac, dstMac);
+                    String key=entry.getFlowName();
+                    entryDlMac.put(key, value);
+//                    this.frm.uninstallFlowEntry(entry);
+                }
+            }
+            if (!entryDlMac.isEmpty()){
+                Status status=removeEntryBasedOnMaclist(entryDlMac);
+            }
+            if (mac_to_port_per_switch.containsKey(node)){
+                mac_to_port_per_switch.remove(node);
+            }
+            frm.clearFirewallEntryList();
+            break;
+        case CHANGED:
+            break;
+        default:
+            return;
+        }
+
     }
 }
