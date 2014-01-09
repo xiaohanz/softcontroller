@@ -155,12 +155,20 @@ public class FirewallNorthbound{
             throw new ServiceUnavailableException("Firewall " + RestMessages.SERVICEUNAVAILABLE.toString());
         }
         if (status.equals("enabled")){
-            frw.setstatus(true);
-            return "{\"status\" : \"success\", \"details\" : \"firewall running\"}\n";
+            Status statusLog=frw.setstatus(true);
+            if (statusLog.isSuccess()){
+                return "{\"status\" : \"success\", \"details\" : \"firewall running\"}\n";
+            }else{
+                return "{\"status\" : \"failed\", \"details\" : \"firewall running failed\"}\n";
+            }
         }
         else if (status.equals("disabled")){
-            frw.setstatus(false);
-            return "{\"status\" : \"success\", \"details\" : \"firewall stop\"}\n";
+            Status statusLog=frw.setstatus(false);
+            if (statusLog.isSuccess()){
+                return "{\"status\" : \"success\", \"details\" : \"firewall stop\"}\n";
+            }else{
+                return "{\"status\" : \"failed\", \"details\" : \"firewall stop failed\"}\n";
+            }
         }
         return status;
     }
