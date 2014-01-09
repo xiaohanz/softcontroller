@@ -92,8 +92,21 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         return enabled;
     }
     @Override
-    public void setstatus(boolean enabled) {
+    public Status setstatus(boolean enabled) {
+        Status status=new Status(StatusCode.SUCCESS);
         this.enabled=enabled;
+        if (enabled==false){
+            List<FlowEntry> flowEntrys=frm.getFlowEntriesForGroup("FirewallRule");
+            if (!flowEntrys.isEmpty()){
+               for (FlowEntry entry:flowEntrys){
+                   status=frm.uninstallFlowEntry(entry);
+                   if (!status.isSuccess()){
+                       return status;
+                   }
+               }
+            }
+        }
+        return status;
     }
     @Override
     public ConcurrentMap<String, FirewallRule> getRuleConfigList() {
@@ -664,7 +677,7 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
     }
     @Override
     public void notifyHTClientHostRemoved(HostNodeConnector host) {
-        if (host == null) {
+        if (host == null||this.enabled==false) {
             return;
         }
         byte[] hMac=host.getDataLayerAddressBytes();
@@ -690,14 +703,14 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
 
     @Override
     public void notifyHTClient(HostNodeConnector host) {
-        if (host == null){
+        if (host == null||this.enabled==false){
             return;
         }
     }
     @Override
     public void notifyNodeConnector(NodeConnector nodeConnector,
             UpdateType type, Map<String, Property> propMap) {
-        if (nodeConnector == null)
+        if (nodeConnector == null||this.enabled==false)
             return;
         switch (type) {
         case ADDED:
@@ -726,6 +739,12 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         List<FlowEntry> flowEntrys=frm.getFirewallEntry();
         if(flowEntrys.isEmpty()){
             flowEntrys=frm.getFlowEntriesForNode(node);
+        }
+        String policyName ="FirewallRule";
+        for (FlowEntry entry :flowEntrys){
+            if (!policyName.equals(entry.getGroupName())){
+                flowEntrys.remove(entry.clone());
+            }
         }
         Map<String,Map<String,String>> entryDlMac = new HashMap<String,Map<String,String>>();
         for (FlowEntry entry: flowEntrys){
