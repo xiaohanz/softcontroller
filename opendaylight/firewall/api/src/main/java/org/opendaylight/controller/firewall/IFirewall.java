@@ -11,8 +11,9 @@ import org.opendaylight.controller.sal.utils.Status;
 public interface IFirewall {
 
     public boolean isEnabled();
-    /** */
-    public void setstatus(boolean enabled);
+    /**
+     * @return  */
+    public Status setstatus(boolean enabled);
     /**
      * Adds a new Firewall rule
      * @return
