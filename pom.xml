@@ -126,6 +126,7 @@
 
     <!-- Samples -->
     <module>opendaylight/samples/simpleforwarding</module>
+    <module>opendaylight/samples/Dijmacforwarding</module>
     <module>opendaylight/samples/loadbalancer</module>
     <module>opendaylight/samples/northbound/loadbalancer</module>
 
