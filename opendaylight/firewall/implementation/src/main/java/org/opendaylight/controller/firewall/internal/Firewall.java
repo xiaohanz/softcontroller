@@ -811,7 +811,7 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
     @Override
     public void notifyNode(Node node, UpdateType type,
             Map<String, Property> propMap) {
-        if (node == null){
+        if (node == null||this.enabled==false){
             return;
         }
         switch (type) {
