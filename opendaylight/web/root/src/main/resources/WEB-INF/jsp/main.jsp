@@ -17,13 +17,15 @@
 <!-- Bootstrap CSS - 1 -->
 <link href="/css/bootstrap.min.css" rel="stylesheet" media="screen">
 <link rel="stylesheet" type="text/css" href="/css/fuelux.min.css">
-<link rel="stylesheet" type="text/css" href="/css/opendaylight.css">
+<link rel="stylesheet" type="text/css" href="/css/bnc.css">
+<link rel="stylesheet" type="text/css" href="/css/jquery.contextMenu.css">
+
 
 <!-- Core CSS - 2 -->
 <link rel="stylesheet/less" type="text/css" href="/css/one.less">
 
 <c:set var="version" value="Version 0.1" scope="application" />
-<c:set var="name" value="OpenDaylight" scope="application" />
+<c:set var="name" value="BNC" scope="application" />
 
 <%
     String filePath = "/WEB-INF/jsp/custommain.jsp";
@@ -54,6 +56,8 @@
 
 <!-- Topology - 4 -->
 <script src="/js/jit.js"></script>
+<!-- jQuery Contextmenu - 5 -->
+<script src="/js/jquery.contextMenu.js"></script>
 </head>
 <body>
 

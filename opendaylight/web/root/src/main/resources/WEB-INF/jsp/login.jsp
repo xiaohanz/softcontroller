@@ -13,7 +13,7 @@
 	<!-- Login CSS - 2 -->
 	<link rel="stylesheet/less" type="text/css" href="/css/login.less">
 
-<c:set var="title" value="OpenDaylight - Login" scope="application"/>
+<c:set var="title" value="bnc - Login" scope="application"/>
 <%
     String filePath = "/WEB-INF/jsp/customlogin.jsp"; 
 	URL fileURL = pageContext.getServletContext().getResource(filePath);

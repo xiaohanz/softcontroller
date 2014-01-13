@@ -141,7 +141,7 @@ one.f.switchmanager.nodesLearnt = {
         one.f.switchmanager.nodesLearnt.ajax.other(one.f.switchmanager.rootUrl + "/nodeInformation",result,function(content) {
         //one.f.switchmanager.nodesLearnt.ajax.main(one.f.switchmanager.rootUrl + "/tiers", function(tiers) {
 
-          var nodeId = decodeURIComponent(evt.target.id);
+          var nodeId = decodeURIComponent(evt.target.getAttribute("nodeid"));
           var h3;
           var footer = [];
           var $body = one.f.switchmanager.nodesLearnt.modal.body.updateNode(nodeId, JSON.parse(decodeURIComponent(evt.target.getAttribute("switchDetails"))), content);
@@ -349,7 +349,7 @@ one.f.switchmanager.nodesLearnt = {
           $.each(items, function (index, item) {
             var nodeName = item.nodeName;
             var nodeNameEntry = item.nodeName ? item.nodeName : "Click to update";
-            item.nodeName = '<a href="#" id="' + item.nodeId + '" switchDetails=' + encodeURIComponent(JSON.stringify(item)) + 
+            item.nodeName = '<a href="#" nodeid="' + item.nodeId + '" switchDetails=' + encodeURIComponent(JSON.stringify(item)) + 
             ' privilege=' + data.privilege + '>' + nodeNameEntry + '</a>';
 
           var ports = item.ports;

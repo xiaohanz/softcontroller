@@ -98,11 +98,15 @@ one.main.page = {
     delete one.f;
     $('.dashlet', '#main').empty();
     $('.nav', '#main').empty();
+     var jsEl=document.createElement("script");
+           jsEl.src=one.main.constants.address.prefix+"/"+page+"/js/page.js";
+           document.body.appendChild(jsEl);
+           one.main.menu.registry.load = false;
     // fetch page's js
-    $.getScript(one.main.constants.address.prefix+"/"+page+"/js/page.js")
+    /*$.getScript(one.main.constants.address.prefix+"/"+page+"/js/page.js")
       .success(function() {
         one.main.menu.registry.load = false;
-      });
+      });*/
 
     $.ajaxSetup({
       data : {
