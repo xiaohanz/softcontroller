@@ -12,10 +12,14 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 //import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentMap;
 
 import org.opendaylight.controller.flowstoragemanager.IFlowStorage;
 import org.opendaylight.controller.flowstoragemanager.IFlowUpdateListener;
@@ -56,7 +60,6 @@ public class FlowStorageManager implements
     private String nodeId;
     private long flowId;
     private String setupTime;
-    private String stopTime;
     private long reflowid;
     private short entryPriority;
     private Match match;
@@ -349,8 +352,9 @@ public class FlowStorageManager implements
     }
     public void addFlowList(ArrayList<FlowEntry> flowDB){
         if (dbstorage == null) {
-            System.out.println("Drive load failure");
-        } else{
+            dbstorage = (IFlowStorage) ServiceHelper.getGlobalInstance(
+                    IFlowStorage.class, this);
+        }
             if(conn == null){
                 conn = dbstorage.connectDb();
             }
@@ -363,7 +367,6 @@ public class FlowStorageManager implements
                 conn=null;
             }
         }
-    }
     public void timer(){
          Calendar calendar = Calendar.getInstance();
          calendar.set(Calendar.HOUR_OF_DAY, 12);
@@ -468,7 +471,7 @@ public class FlowStorageManager implements
      * monitor the removeEntry operation in FRM and will update flow database accordingly.
      *
      */
-    public int updateFlowEntry(long Byte, int DurationSeconds, int DurationNanoseconds, String Reason, long Packet, long id){
+    public int updateFlowEntry(ConcurrentMap<Integer, Object[]> statistic){
          if(Switch == 0){
              addFlowList(flowDB1);
              flowDB1.clear();
@@ -476,72 +479,77 @@ public class FlowStorageManager implements
              addFlowList(flowDB2);
              flowDB2.clear();
          }
-         reflowid = id;
-         bytecount = Byte;
-         durationSeconds = DurationSeconds;
-         durationNanoseconds = DurationNanoseconds;
-         reason = Reason;
-         packet = Packet;
-         String getidSql;
-         String updateSql;
-         String getflowidSql;
-         PreparedStatement pstmtupdate=null;
-         PreparedStatement pstmtgetidSql = null;
-         PreparedStatement pstmtgetflowidSql = null;
-         if (dbstorage == null) {
-             System.out.println("Drive load failure");
-         } else{
-             stopTime = getSysTime();
-             //if not connect with database then try connect
-             if(conn == null){
-                 conn = dbstorage.connectDb();
+         Set<Entry<Integer, Object[]>> statistics = statistic.entrySet();
+         Iterator<Entry<Integer, Object[]>> iterator = statistics.iterator();
+         while(iterator.hasNext()){
+             Entry<Integer, Object[]> entry = (Entry<Integer, Object[]>)iterator.next();
+             reflowid =(long) entry.getKey();
+             Object[] c = entry.getValue();
+             bytecount = (long)c[0];
+             durationSeconds = (int)c[2];
+             durationNanoseconds = (int)c[3];
+             reason = "NULL";
+             packet = (long)c[1];
+             String getidSql;
+             String updateSql;
+             String getflowidSql;
+             PreparedStatement pstmtupdate=null;
+             PreparedStatement pstmtgetidSql = null;
+             PreparedStatement pstmtgetflowidSql = null;
+             if (dbstorage == null) {
+                 dbstorage = (IFlowStorage) ServiceHelper.getGlobalInstance(
+                         IFlowStorage.class, this);
              }
-             //generate update flow entry stop time sql
-             getflowidSql = generategetflowidSql();
-             try{
-                 conn.setAutoCommit(false);
-                 conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
-                 pstmtgetflowidSql = conn.prepareStatement(getflowidSql);
-                 rs = pstmtgetflowidSql.executeQuery();
-                 //System.out.println("The value is ");
-                 if(rs.next()) {
-                     //System.out.println(rs.getInt(1));
-                     //get returned max match_id
-                     reid =  rs.getInt(1);
+                 //if not connect with database then try connect
+                 if(conn == null){
+                     conn = dbstorage.connectDb();
                  }
-                 getidSql = generategetstatisticidSql();
-                 conn.setAutoCommit(false);
-                 conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
-                 pstmtgetidSql = conn.prepareStatement(getidSql);
-                 rs = pstmtgetidSql.executeQuery();
-                 //System.out.println("The value is ");
-                 if(rs.next()) {
-                     //System.out.println(rs.getInt(1));
-                     //get returned max match_id
-                     restatisticid =  rs.getInt(1);
-                 }
-                 updateSql = generateUpdatestatisticSql();
-                 pstmtupdate = conn.prepareStatement(updateSql);
-                 conn.setAutoCommit(false);
-                 pstmtupdate.executeUpdate();
-                 conn.commit();
-             }catch(SQLException e) {
-                 System.out.println("SQLException");
-             } finally {
-                 try {
-                     if (conn != null){
-                         dbstorage.disConnectDb();
-                         conn=null;
+                 //generate update flow entry stop time sql
+                 getflowidSql = generategetflowidSql();
+                 try{
+                     conn.setAutoCommit(false);
+                     conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+                     pstmtgetflowidSql = conn.prepareStatement(getflowidSql);
+                     rs = pstmtgetflowidSql.executeQuery();
+                     //System.out.println("The value is ");
+                     if(rs.next()) {
+                         //System.out.println(rs.getInt(1));
+                         //get returned max match_id
+                         reid =  rs.getInt(1);
                      }
-                     if(pstmtupdate != null) {
-                         pstmtupdate.close();
-                         pstmtupdate = null;
+                     getidSql = generategetstatisticidSql();
+                     conn.setAutoCommit(false);
+                     conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+                     pstmtgetidSql = conn.prepareStatement(getidSql);
+                     rs = pstmtgetidSql.executeQuery();
+                     //System.out.println("The value is ");
+                     if(rs.next()) {
+                         //System.out.println(rs.getInt(1));
+                         //get returned max match_id
+                         restatisticid =  rs.getInt(1);
                      }
-                 } catch(SQLException e) {
-                     System.out.println("Database connection load failure");
+                     updateSql = generateUpdatestatisticSql();
+                     pstmtupdate = conn.prepareStatement(updateSql);
+                     conn.setAutoCommit(false);
+                     pstmtupdate.executeUpdate();
+                     conn.commit();
+                 }catch(SQLException e) {
+                     System.out.println("SQLException");
+                 } finally {
+                     try {
+                         if (conn != null){
+                             dbstorage.disConnectDb();
+                             conn=null;
+                         }
+                         if(pstmtupdate != null) {
+                             pstmtupdate.close();
+                             pstmtupdate = null;
+                         }
+                     } catch(SQLException e) {
+                         System.out.println("Database connection load failure");
+                     }
                  }
-             }
-     }
+         }
      return 1;
     }
 }

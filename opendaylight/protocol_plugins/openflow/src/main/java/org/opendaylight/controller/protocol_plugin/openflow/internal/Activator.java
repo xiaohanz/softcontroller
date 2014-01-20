@@ -280,8 +280,8 @@ public class Activator extends ComponentActivatorAbstractBase {
                     .setRequired(true));
             c.add(createServiceDependency()
                     .setService(IReceiveflowid.class)
-                    .setCallbacks("setIReceiveflowid",
-                            "unsetIReceiveflowid")
+                    .setCallbacks("setIReceiveflowidService",
+                            "unsetIReceiveflowidService")
                     .setRequired(false));
         }
 

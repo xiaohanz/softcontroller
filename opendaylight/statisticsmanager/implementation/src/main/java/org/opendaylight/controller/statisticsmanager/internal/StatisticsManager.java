@@ -366,7 +366,6 @@ public class StatisticsManager implements IStatisticsManager, IReadServiceListen
             set.add(flowEntry.getFlow());
             index.put(node, set);
         }
-
         // Iterate over flows per indexed node and add to output
         for (Entry<Node, Set<Flow>> indexEntry : index.entrySet()) {
             node = indexEntry.getKey();

@@ -1,6 +1,8 @@
 
 package org.opendaylight.controller.flowstoragemanager;
 
+import java.util.concurrent.ConcurrentMap;
+
 import org.opendaylight.controller.forwardingrulesmanager.FlowEntry;
 //import org.opendaylight.controller.forwardingrulesmanager.IForwardingRulesManager;
 //import org.opendaylight.controller.sal.action.Action;
@@ -44,5 +46,5 @@ public interface IFlowUpdateListener{
      *            the flow entry to uninstall
      * @return the {@code Status} object indicating the result of this action
      */
-    public int updateFlowEntry(long Byte, int DurationSeconds, int DurationNanoseconds, String Reason, long Packet, long id);
+    public int updateFlowEntry(ConcurrentMap<Integer, Object[]> statistic);
 }

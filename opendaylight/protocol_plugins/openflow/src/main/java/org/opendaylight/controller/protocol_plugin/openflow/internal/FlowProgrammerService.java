@@ -18,7 +18,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.eclipse.osgi.framework.console.CommandInterpreter;
 import org.eclipse.osgi.framework.console.CommandProvider;
-import org.opendaylight.controller.flowstoragemanager.IFlowUpdateListener;
 import org.opendaylight.controller.forwardingrulesmanager.IReceiveflowid;
 import org.opendaylight.controller.protocol_plugin.openflow.IFlowProgrammerNotifier;
 import org.opendaylight.controller.protocol_plugin.openflow.IInventoryShimExternalListener;
@@ -71,14 +70,6 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
     private int barrierMessagePriorCount = getBarrierMessagePriorCount();
     private IPluginOutConnectionService connectionOutService;
     private IReceiveflowid receiveflowid;
-    private IFlowUpdateListener flowupdate;
-    private long Byte;
-    private int DurationSeconds;
-    private int DurationNanoseconds;
-    private String Reason;
-    private long Packet;
-    private long id;
-    private long flow_id;
 
     public FlowProgrammerService() {
         controller = null;
@@ -111,14 +102,6 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
     void unIReceiveflowidService(IReceiveflowid flowid){
         if(receiveflowid == flowid){
             receiveflowid = null;
-        }
-    }
-    void setIFlowUpdateListenerService(IFlowUpdateListener update){
-        flowupdate = update;
-    }
-    void unIFlowUpdateListenerService(IFlowUpdateListener update){
-        if(flowupdate == update){
-            flowupdate = null;
         }
     }
     public void setFlowProgrammerNotifier(Map<String, ?> props,
@@ -414,15 +397,6 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
             handleErrorMessage(sw, (OFError) msg);
         }
     }
-    public void praseRemovedMessage(OFFlowRemoved msg){
-        Byte = msg.getByteCount();
-        DurationSeconds = msg.getDurationSeconds();
-        DurationNanoseconds = msg.getDurationNanoseconds();
-        Reason = msg.getReason().toString();
-        Packet = msg.getPacketCount();
-        id = receiveflowid.sendflowid();
-        flowupdate.updateFlowEntry(Byte, DurationSeconds, DurationNanoseconds, Reason, Packet, id);
-    }
     private void handleFlowRemovedMessage(ISwitch sw, OFFlowRemoved msg) {
         Node node = NodeCreator.createOFNode(sw.getId());
         Flow flow = new FlowConverter(msg.getMatch(),
@@ -434,7 +408,11 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
         Match match = flow.getMatch();
         NodeConnector inPort = match.isPresent(MatchType.IN_PORT) ? (NodeConnector) match
                 .getField(MatchType.IN_PORT).getValue() : null;
-
+        Object[] array = new Object[4];
+        array[0] = msg.getByteCount();
+        array[1] = msg.getPacketCount();
+        array[2] = msg.getDurationSeconds();
+        array[3] = msg.getDurationNanoseconds();
         for (Map.Entry<String, IFlowProgrammerNotifier> containerNotifier : flowProgrammerNotifiers
                 .entrySet()) {
             String container = containerNotifier.getKey();
@@ -449,9 +427,9 @@ public class FlowProgrammerService implements IPluginInFlowProgrammerService,
             if (inPort == null
                     || container.equals(GlobalConstants.DEFAULT.toString())
                     || (containerToNc.containsKey(container) && containerToNc.get(container).contains(inPort))) {
+                receiveflowid.sendFlowId(array);
                 notifier.flowRemoved(node, flow);
             }
-            this.praseRemovedMessage(msg);
         }
     }
 

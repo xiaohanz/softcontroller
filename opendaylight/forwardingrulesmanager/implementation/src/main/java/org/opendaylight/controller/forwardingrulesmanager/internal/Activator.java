@@ -29,6 +29,7 @@ import org.opendaylight.controller.sal.core.IContainerLocalListener;
 import org.opendaylight.controller.sal.flowprogrammer.IFlowProgrammerListener;
 import org.opendaylight.controller.sal.flowprogrammer.IFlowProgrammerService;
 import org.opendaylight.controller.sal.utils.GlobalConstants;
+import org.opendaylight.controller.statisticsmanager.IStatisticsManager;
 import org.opendaylight.controller.switchmanager.IInventoryListener;
 import org.opendaylight.controller.switchmanager.ISwitchManager;
 import org.opendaylight.controller.switchmanager.ISwitchManagerAware;
@@ -102,6 +103,8 @@ public class Activator extends ComponentActivatorAbstractBase {
                     .setCallbacks("setIConnectionManager", "unsetIConnectionManager").setRequired(true));
             c.add(createContainerServiceDependency(containerName).setService(IFlowUpdateListener.class)
                     .setCallbacks("setIFlowUpdateListener", "unsetIFlowUpdateListener").setRequired(false));
+            c.add(createContainerServiceDependency(containerName).setService(IStatisticsManager.class)
+                    .setCallbacks("setIStatisticsManager", "unsetIStatisticsManager").setRequired(false));
             if (GlobalConstants.DEFAULT.toString().equals(containerName)) {
                 c.add(createServiceDependency().setService(IContainerManager.class)
                         .setCallbacks("setIContainerManager", "unsetIContainerManager").setRequired(true));
