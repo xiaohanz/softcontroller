@@ -62,8 +62,8 @@ public class Activator extends ComponentActivatorAbstractBase {
             Dictionary<String, Object> props = new Hashtable<String, Object>();
             props.put("salListenerName", "firewall");
             Set<String> propSet = new HashSet<String>();
-            propSet.add(Firewall.FIREWALL_EVENT_CACHE_NAME);
-//            props.put("cachename", propSet);
+            propSet.add(Firewall.FIREWALL_RULE_CACHE_NAME);
+            props.put("cachename", propSet);
 //            c.setInterface(new String[] {IFirewall.class.getName(), IConfigurationContainerAware.class.getName(),IListenDataPacket.class.getName(),IInventoryListener.class.getName(),
 //                    IfNewHostNotify.class.getName()},props);
             c.setInterface(new String[] {IFirewall.class.getName(), IConfigurationContainerAware.class.getName(),IListenDataPacket.class.getName(),IInventoryListener.class.getName(),

@@ -79,14 +79,14 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
     private static Logger log = LoggerFactory.getLogger(FirewallRule.class);
     ConcurrentMap<String,FirewallRule> ruleConfigList;
     private Map<String,String> id_ruleName=new HashMap<String,String>();
-    private IClusterContainerServices clusterContainerService = null;
+    private IClusterContainerServices clusterContainerService;
     private IDataPacketService dataPacketService;
     private Map<Node, Map<String, NodeConnector>> mac_to_port_per_switch = new HashMap<Node, Map<String, NodeConnector>>();
     private Map<String,String> value = new HashMap<String,String>();
     private static String ROOT = GlobalConstants.STARTUPHOME.toString();
     private String firewallFileName = null;
     protected boolean enabled;
-    static final String FIREWALL_EVENT_CACHE_NAME = "firewall.requestReplyEvent";
+    static final String FIREWALL_RULE_CACHE_NAME = "firewall.ruleConfig";
     @Override
     public boolean isEnabled(){
         return enabled;
@@ -183,29 +183,6 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         id_ruleName.put(id, ruleConfig.getName());
         return id;
     }
-    /*
-    @Override
-    public Status updateRule(FirewallRule ruleConfig) {
-        // rule validate
-        //Status status = ruleConfig.validate(container);
-        Status status = ruleConfig.validate();
-        if (!status.isSuccess()) {
-            log.warn("Invalid Configuration for flow {}. The failure is {}", ruleConfig, status.getDescription());
-            String error = "Invalid Configuration (" + status.getDescription() + ")";
-            return new Status(StatusCode.BADREQUEST, error);
-        }
-        if (ruleConfigList.get(ruleConfig.getName()) == null) {
-            status=this.addRule(ruleConfig);
-            if (status.isSuccess()){
-                return new Status(StatusCode.SUCCESS,
-                    "Success! New one firewallRule created,because firewall Rule with the specified name does not exist\n");
-            }else{
-                return new Status(StatusCode.INTERNALERROR,
-                    "Firewall Rule with the specified name does not exist,create new one failed\n");
-            }
-        }
-        return modifyRule(ruleConfig);
-    }*/
     @Override
     public Status updateRule(String id,FirewallRule ruleConfig) {
         // rule validate
@@ -316,14 +293,7 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
     public Status saveConfiguration() {
         return saveFirewallRule();
     }
-/*    private Status modifyRule(FirewallRule rule) {
-       // FirewallRule mRule=ruleConfigList.get(rule.getName());
-        if(this.removeFirewallRule(rule.getName(),rule).isSuccess())
-            if(this.addRule(rule).isSuccess()){
-                return new Status(StatusCode.SUCCESS,"Success! FirewallRule modifid\n");
-            }
-        return new Status(StatusCode.INTERNALERROR,"modify rule failed\n");
-    }*/
+
     void setDataPacketService(IDataPacketService s) {
         this.dataPacketService = s;
     }
@@ -333,7 +303,7 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
             this.dataPacketService = null;
         }
     }
-    @SuppressWarnings({ })
+
     private void allocateCaches() {
         if (this.clusterContainerService == null) {
             log.info("un-initialized clusterContainerService, can't create cache");
@@ -341,25 +311,25 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         }
         try {
             clusterContainerService.createCache(
-                    "firewall.rule.configs", EnumSet.of(IClusterServices.cacheMode.TRANSACTIONAL));
+                    FIREWALL_RULE_CACHE_NAME, EnumSet.of(IClusterServices.cacheMode.TRANSACTIONAL));
         } catch (CacheExistException cee) {
             log.error("\nCache already exists - destroy and recreate if needed");
         } catch (CacheConfigException cce) {
             log.error("\nCache configuration invalid - check cache mode");
         }
     }
-    @SuppressWarnings({ "unchecked" })
+
     private void retrieveCaches() {
         if (this.clusterContainerService == null) {
             log.info("un-initialized clusterContainerService, can't retrieve cache");
             return;
         }
-        ruleConfigList = (ConcurrentMap<String, FirewallRule>) clusterContainerService.getCache("firewall.rule.configs");
+        ruleConfigList = (ConcurrentMap<String, FirewallRule>) clusterContainerService.getCache(FIREWALL_RULE_CACHE_NAME);
         if (ruleConfigList == null) {
             log.error("\nFailed to get rulesDB handle");
         }
     }
-    @SuppressWarnings("unchecked")
+
     private void loadConfiguration() {
         ObjectReader objReader = new ObjectReader();
         ConcurrentMap<String, FirewallRule> confList = (ConcurrentMap<String, FirewallRule>) objReader.read(this, firewallFileName);
@@ -429,7 +399,6 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         // Instantiate cluster synced variables
         allocateCaches();
         retrieveCaches();
-      //  Executors.newFixedThreadPool(1);
         if (ruleConfigList.isEmpty()) {
             loadConfiguration();
         }
@@ -470,7 +439,6 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
      *
      */
     void stop() {
-        executor.shutdown();
     }
     @Override
     public PacketResult receiveDataPacket(RawPacket inPkt) {
@@ -608,7 +576,7 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
          }
         return dst_connector;
     }
-    @SuppressWarnings("unused")
+
     private Status installFlow(FirewallRule rule,RawPacket inPkt,NodeConnector incoming_connector) {
         Packet formattedPak = this.dataPacketService.decodeDataPacket(inPkt);
         FlowEntry flowentry=rule.changeToFlow(formattedPak,incoming_connector);
@@ -811,7 +779,7 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
     @Override
     public void notifyNode(Node node, UpdateType type,
             Map<String, Property> propMap) {
-        if (node == null){
+        if (node == null||this.enabled==false){
             return;
         }
         switch (type) {
