@@ -36,7 +36,7 @@
     <module>opendaylight/firewall/implementation</module>
     <module>opendaylight/flowmanager/api</module>
     <module>opendaylight/flowmanager/implementation</module>
-    <module>opendaylight/l2forwardingmanager</module>
+   <!-- <module>opendaylight/l2forwardingmanager</module>-->
     <module>opendaylight/forwardingrulesmanager/api</module>
     <module>opendaylight/forwardingrulesmanager/implementation</module>
     <module>opendaylight/hosttracker/api</module>
@@ -126,8 +126,9 @@
     <module>opendaylight/protocol_plugins/stub</module>
 
     <!-- Samples -->
-    <module>opendaylight/samples/simpleforwarding</module>
-    <module>opendaylight/samples/Dijmacforwarding</module>
+    <!--<module>opendaylight/samples/simpleforwarding</module>-->
+    <!--<module>opendaylight/samples/Dijmacforwarding</module>-->
+    <module>opendaylight/samples/dijmacPacketIn</module>
     <module>opendaylight/samples/loadbalancer</module>
     <module>opendaylight/samples/northbound/loadbalancer</module>
 

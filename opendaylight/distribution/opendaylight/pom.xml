@@ -823,12 +823,18 @@
       <artifactId>samples.simpleforwarding</artifactId>
       <version>${controller.version}</version>
     </dependency>
+    <!--
     <dependency>
       <groupId>org.opendaylight.controller</groupId>
       <artifactId>samples.Dijmacforwarding</artifactId>
       <version>0.1.0-SNAPSHOT</version>
     </dependency>
-
+    -->
+    <dependency>
+      <groupId>org.opendaylight.controller</groupId>
+      <artifactId>samples.dijmacPacketIn</artifactId>
+      <version>0.1.0-SNAPSHOT</version>
+    </dependency>
     <!-- Third party depedencies -->
 
     <dependency>
