@@ -820,12 +820,12 @@
       <artifactId>samples.loadbalancer.northbound</artifactId>
       <version>${controller.version}</version>
     </dependency>
+    <!--
     <dependency>
       <groupId>org.opendaylight.controller</groupId>
       <artifactId>samples.simpleforwarding</artifactId>
       <version>${controller.version}</version>
     </dependency>
-    <!--
     <dependency>
       <groupId>org.opendaylight.controller</groupId>
       <artifactId>samples.Dijmacforwarding</artifactId>
