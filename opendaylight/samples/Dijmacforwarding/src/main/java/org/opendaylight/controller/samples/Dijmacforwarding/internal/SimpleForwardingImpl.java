@@ -1,13 +1,5 @@
 
-/*
- * Copyright (c) 2013 Cisco Systems, Inc. and others.  All rights reserved.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v1.0 which accompanies this distribution,
- * and is available at http://www.eclipse.org/legal/epl-v10.html
- */
-
-package org.opendaylight.controller.samples.Dijmacforwarding.internal;
+package org.opendaylight.controller.samples.dijmacforwarding.internal;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -48,7 +40,7 @@ import org.opendaylight.controller.sal.routing.IListenRoutingUpdates;
 import org.opendaylight.controller.sal.routing.IRouting;
 import org.opendaylight.controller.sal.utils.NodeConnectorCreator;
 import org.opendaylight.controller.sal.utils.Status;
-import org.opendaylight.controller.samples.Dijmacforwarding.HostNodePair;
+import org.opendaylight.controller.samples.dijmacforwarding.HostNodePair;
 import org.opendaylight.controller.switchmanager.IInventoryListener;
 import org.opendaylight.controller.switchmanager.ISwitchManager;
 import org.opendaylight.controller.topologymanager.ITopologyManager;
@@ -56,7 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class implements basic L3 forwarding within the managed devices.
+ * This class implements basic L2 forwarding within the managed devices.
  * Forwarding is only done within configured subnets.</br>
  * <br/>
  * The basic flow is that the module listens for new hosts from the
@@ -259,8 +251,6 @@ public class SimpleForwardingImpl implements IfNewHostNotify,
             Match match = new Match();
             List<Action> actions = new ArrayList<Action>();
 
-            // IP destination based forwarding on /32 entries only!
-//            match.setField(MatchType.DL_TYPE, EtherTypes.IPv4.shortValue());
             byte[] hostMac=host.getDataLayerAddressBytes();
             if (hostMac==null){
                 continue;
@@ -407,7 +397,7 @@ public class SimpleForwardingImpl implements IfNewHostNotify,
      * implicitly calculate the shortest path tree among the switch
      * to which the host is attached and all the other switches in the
      * network and will automatically create all the rules that allow
-     * a /32 destination IP based forwarding, as in traditional IP
+     * mac based forwarding, as in traditional
      * networks.
      *
      * @param host Host for which we are going to prepare the rules in the rulesDB
@@ -517,7 +507,7 @@ public class SimpleForwardingImpl implements IfNewHostNotify,
      * will implicitly calculate the shortest path from the switch
      * where the port has come up to the switch where host is ,
      * attached and will automatically create all the rules that allow
-     * a /32 destination IP based forwarding, as in traditional IP
+     * mac based forwarding, as in traditional IP
      * networks.
      *
      * @param host Host for which we are going to prepare the rules in the rulesDB
@@ -651,11 +641,6 @@ public class SimpleForwardingImpl implements IfNewHostNotify,
                 } else {
                     log.error("Cannot find a policy for SW:({}) Host: ({})",
                               swId, host);
-                    /* // Now dump every single rule */
-                    /* for (HostNodePair dumpkey : this.rulesDB.keySet()) { */
-                    /*  po = this.rulesDB.get(dumpkey); */
-                    /*  log.debug("Dumping entry H{" + dumpkey.getHost() + "} S{" + dumpkey.getSwitchId() + "} = {" + (po == null ? "null policy" : po)); */
-                    /* } */
                 }
             }
         }

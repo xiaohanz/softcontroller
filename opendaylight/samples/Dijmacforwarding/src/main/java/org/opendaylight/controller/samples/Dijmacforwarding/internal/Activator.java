@@ -1,13 +1,5 @@
 
-/*
- * Copyright (c) 2013 Cisco Systems, Inc. and others.  All rights reserved.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v1.0 which accompanies this distribution,
- * and is available at http://www.eclipse.org/legal/epl-v10.html
- */
-
-package org.opendaylight.controller.samples.Dijmacforwarding.internal;
+package org.opendaylight.controller.samples.dijmacforwarding.internal;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -24,8 +16,8 @@ import org.opendaylight.controller.sal.packet.IDataPacketService;
 import org.opendaylight.controller.sal.packet.IListenDataPacket;
 import org.opendaylight.controller.sal.routing.IListenRoutingUpdates;
 import org.opendaylight.controller.sal.routing.IRouting;
-import org.opendaylight.controller.samples.Dijmacforwarding.IBroadcastHandler;
-import org.opendaylight.controller.samples.Dijmacforwarding.IBroadcastPortSelector;
+import org.opendaylight.controller.samples.dijmacforwarding.IBroadcastHandler;
+import org.opendaylight.controller.samples.dijmacforwarding.IBroadcastPortSelector;
 import org.opendaylight.controller.switchmanager.IInventoryListener;
 import org.opendaylight.controller.switchmanager.ISwitchManager;
 import org.opendaylight.controller.topologymanager.ITopologyManager;
@@ -97,7 +89,7 @@ public class Activator extends ComponentActivatorAbstractBase {
                     .setRequired(false));
         }else if (imp.equals(SimpleBroadcastHandlerImpl.class)) {
             Dictionary<String, String> props = new Hashtable<String, String>();
-            props.put("salListenerName", "simplebroadcasthandler");
+            props.put("salListenerName", "macbroadcasthandler");
 
             // export the service
             c.setInterface(new String[] { IBroadcastHandler.class.getName(),

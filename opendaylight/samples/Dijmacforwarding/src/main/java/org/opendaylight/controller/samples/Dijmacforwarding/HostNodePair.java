@@ -1,13 +1,5 @@
 
-/*
- * Copyright (c) 2013 Cisco Systems, Inc. and others.  All rights reserved.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v1.0 which accompanies this distribution,
- * and is available at http://www.eclipse.org/legal/epl-v10.html
- */
-
-package org.opendaylight.controller.samples.Dijmacforwarding;
+package org.opendaylight.controller.samples.dijmacforwarding;
 
 import java.io.Serializable;
 
@@ -18,7 +10,7 @@ import org.opendaylight.controller.sal.core.Node;
  * Class that represent a pair of {Host, Node}, the intent of it
  * is to be used as a key in the database kept by IPSwitching module
  * where for every Host, Switch we will have a Forwarding Rule that
- * will route the traffic toward the /32 destination
+ * will route the traffic toward the mac
  *
  */
 public class HostNodePair implements Serializable {

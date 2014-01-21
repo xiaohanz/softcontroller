@@ -1,12 +1,5 @@
-/*
- * Copyright (c) 2013 IBM and others.  All rights reserved.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v1.0 which accompanies this distribution,
- * and is available at http://www.eclipse.org/legal/epl-v10.html
- */
 
-package org.opendaylight.controller.samples.Dijmacforwarding.internal;
+package org.opendaylight.controller.samples.dijmacforwarding.internal;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -22,8 +15,8 @@ import org.opendaylight.controller.sal.packet.Packet;
 import org.opendaylight.controller.sal.packet.PacketResult;
 import org.opendaylight.controller.sal.packet.RawPacket;
 import org.opendaylight.controller.sal.utils.EtherTypes;
-import org.opendaylight.controller.samples.Dijmacforwarding.IBroadcastHandler;
-import org.opendaylight.controller.samples.Dijmacforwarding.IBroadcastPortSelector;
+import org.opendaylight.controller.samples.dijmacforwarding.IBroadcastHandler;
+import org.opendaylight.controller.samples.dijmacforwarding.IBroadcastPortSelector;
 import org.opendaylight.controller.switchmanager.ISwitchManager;
 import org.opendaylight.controller.topologymanager.ITopologyManager;
 import org.slf4j.Logger;
