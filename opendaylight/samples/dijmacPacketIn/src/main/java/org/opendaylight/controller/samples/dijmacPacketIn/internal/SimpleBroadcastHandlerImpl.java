@@ -1,5 +1,5 @@
 
-package org.opendaylight.controller.samples.dijmacforwarding.internal;
+package org.opendaylight.controller.samples.dijmacPacketIn.internal;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -15,8 +15,8 @@ import org.opendaylight.controller.sal.packet.Packet;
 import org.opendaylight.controller.sal.packet.PacketResult;
 import org.opendaylight.controller.sal.packet.RawPacket;
 import org.opendaylight.controller.sal.utils.EtherTypes;
-import org.opendaylight.controller.samples.dijmacforwarding.IBroadcastHandler;
-import org.opendaylight.controller.samples.dijmacforwarding.IBroadcastPortSelector;
+import org.opendaylight.controller.samples.dijmacPacketIn.IBroadcastHandler;
+import org.opendaylight.controller.samples.dijmacPacketIn.IBroadcastPortSelector;
 import org.opendaylight.controller.switchmanager.ISwitchManager;
 import org.opendaylight.controller.topologymanager.ITopologyManager;
 import org.slf4j.Logger;

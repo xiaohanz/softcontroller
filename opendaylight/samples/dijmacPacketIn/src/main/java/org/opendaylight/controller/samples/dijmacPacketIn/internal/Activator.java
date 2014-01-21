@@ -1,5 +1,5 @@
 
-package org.opendaylight.controller.samples.dijmacforwarding.internal;
+package org.opendaylight.controller.samples.dijmacPacketIn.internal;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -16,8 +16,8 @@ import org.opendaylight.controller.sal.packet.IDataPacketService;
 import org.opendaylight.controller.sal.packet.IListenDataPacket;
 import org.opendaylight.controller.sal.routing.IListenRoutingUpdates;
 import org.opendaylight.controller.sal.routing.IRouting;
-import org.opendaylight.controller.samples.dijmacforwarding.IBroadcastHandler;
-import org.opendaylight.controller.samples.dijmacforwarding.IBroadcastPortSelector;
+import org.opendaylight.controller.samples.dijmacPacketIn.IBroadcastHandler;
+import org.opendaylight.controller.samples.dijmacPacketIn.IBroadcastPortSelector;
 import org.opendaylight.controller.switchmanager.IInventoryListener;
 import org.opendaylight.controller.switchmanager.ISwitchManager;
 import org.opendaylight.controller.topologymanager.ITopologyManager;
@@ -58,15 +58,21 @@ public class Activator extends ComponentActivatorAbstractBase {
     public void configureInstance(Component c, Object imp, String containerName) {
         if (imp.equals(SimpleForwardingImpl.class)) {
             // export the service
+            Dictionary<String, String> props = new Hashtable<String, String>();
+            props.put("salListenerName", "dijmacpacketin");
+
             c.setInterface(new String[] { IInventoryListener.class.getName(),
                     IfNewHostNotify.class.getName(),
-                    IListenRoutingUpdates.class.getName() }, null);
+                    IListenRoutingUpdates.class.getName(), IListenDataPacket.class.getName()},props);
 
             c.add(createContainerServiceDependency(containerName).setService(
                     IClusterContainerServices.class).setCallbacks(
                     "setClusterContainerService",
                     "unsetClusterContainerService").setRequired(true));
-
+            c.add(createContainerServiceDependency(containerName)
+                    .setService(IDataPacketService.class)
+                    .setCallbacks("setDataPacketService",
+                            "unsetDataPacketService").setRequired(true));
             c.add(createContainerServiceDependency(containerName).setService(
                     ISwitchManager.class).setCallbacks("setSwitchManager",
                     "unsetSwitchManager").setRequired(false));
@@ -89,7 +95,7 @@ public class Activator extends ComponentActivatorAbstractBase {
                     .setRequired(false));
         }else if (imp.equals(SimpleBroadcastHandlerImpl.class)) {
             Dictionary<String, String> props = new Hashtable<String, String>();
-            props.put("salListenerName", "macbroadcasthandler");
+            props.put("salListenerName", "macpacketinbroadcasthandler");
 
             // export the service
             c.setInterface(new String[] { IBroadcastHandler.class.getName(),

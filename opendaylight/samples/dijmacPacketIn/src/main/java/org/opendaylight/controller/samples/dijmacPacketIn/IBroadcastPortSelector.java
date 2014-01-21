@@ -1,5 +1,5 @@
 
-package org.opendaylight.controller.samples.dijmacforwarding;
+package org.opendaylight.controller.samples.dijmacPacketIn;
 
 import java.util.Set;
 
