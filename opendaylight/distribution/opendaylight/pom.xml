@@ -43,6 +43,11 @@
           <artifactId>flowstoragemanager.implementation</artifactId>
           <version>0.0.1</version>
         </dependency>
+        <dependency>
+          <groupId>org.opendaylight.controller</groupId>
+          <artifactId>flowstoragemanager.web</artifactId>
+          <version>0.0.1</version>
+        </dependency>
         <!-- md-sal -->
 
         <dependency>

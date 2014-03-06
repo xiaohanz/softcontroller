@@ -23,16 +23,26 @@ one.f.dashlet = {
     flowsOrPorts: {
         id: "flowsOrPorts",
         name: "Statistics"
+    },
+    activeNodes : {
+        id: 'activeNodes',
+        name: 'Inactive Flow'
+    },
+    inactiveNodes : {
+        id: 'inactiveNodes',
+        name: 'Inactive Nodes'
     }
 };
 
 one.f.menu = {
     left : {
         top : [
-            one.f.dashlet.existingNodes
+            one.f.dashlet.existingNodes,
+            one.f.dashlet.activeNodes
         ],
         bottom : [
-            one.f.dashlet.uptime
+            one.f.dashlet.uptime,
+            one.f.dashlet.inactiveNodes
         ]
     },
     right : {
@@ -92,8 +102,10 @@ one.f.troubleshooting.existingNodes = {
             portsDataGrid: "one_f_troubleshooting_existingNodes_id_portsDataGrid",
             flowsDataGrid: "one_f_troubleshooting_existingNodes_id_flowsDataGrid",
             refreshFlowsButton:"one_f_troubleshooting_existingNodes_id_refreshFlowsButton",
-            refreshPortsButton:"one_f_troubleshooting_existingNodes_id_refreshPortsButton"
-
+            refreshPortsButton:"one_f_troubleshooting_existingNodes_id_refreshPortsButton",
+            refreshStatisticButton:"one_f_troubleshooting_existingNodes_id_refreshStatisticButton",
+            allnodes: "one_f_troubleshooting_existingNodes_id_allnodes"
+            
         },
         load: {
             main: function($dashlet) {
@@ -102,6 +114,12 @@ one.f.troubleshooting.existingNodes = {
                 // TODO(l): Add a generic auto expand function to one.lib and replace custom height setting.
                 //$('#left-top').height('100%');
                 one.f.troubleshooting.existingNodes.ajax(one.f.troubleshooting.rootUrl + "/existingNodes" , function(content) {
+                    var button = one.lib.dashlet.button.single("All Nodes", one.f.troubleshooting.existingNodes.id.allnodes, "btn-primary", "btn-mini");
+        	        var $button = one.lib.dashlet.button.button(button);
+                    $button.click(function() {
+                        window.open("/controller/web/flowstoragemanager/allnodes", '_newtab');
+                    });
+                    $dashlet.append($button);
                     var $gridHTML = one.lib.dashlet.datagrid.init(one.f.troubleshooting.existingNodes.id.existingNodesDataGrid, {
                         searchable: true,
                         filterable: false,
@@ -171,7 +189,7 @@ one.f.troubleshooting.existingNodes = {
                         $("#" + one.f.troubleshooting.existingNodes.id.portsDataGrid).datagrid({dataSource: dataSource});
                     });
                 } catch(e) {}
-            } 
+            }
         },
         ajax : function(url, callback) {
             $.getJSON(url, function(data) {
@@ -179,8 +197,7 @@ one.f.troubleshooting.existingNodes = {
             });
         },
         registry: {},
-        modal : {
-        },
+        modal : {},
         data : {
             existingNodesGrid: function(data) {
                 var source = new StaticDataSource({
@@ -433,7 +450,556 @@ one.f.troubleshooting.existingNodes = {
             }
         }
 };
+one.f.troubleshooting.activeNodes = {
+        id: {
+            popout: "one_f_troubleshooting_activeNodes_id_popout",
+            modal: "one_f_troubleshooting_activeNodes_id_modal",
+            activeNodesDataGrid: "one_f_troubleshooting_activeNodes_id_datagrid",
+            portsDataGrid: "one_f_troubleshooting_activeNodes_id_portsDataGrid",
+            flowsDataGrid: "one_f_troubleshooting_activeNodes_id_flowsDataGrid",
+            StatisticDataGrid: "one_f_troubleshooting_activeNodes_id_StatisticDataGrid",
+            refreshFlowsButton:"one_f_troubleshooting_activeNodes_id_refreshFlowsButton",
+            refreshPortsButton:"one_f_troubleshooting_activeNodes_id_refreshPortsButton",
+            allnodes: "one_f_troubleshooting_activeNodes_id_allnodes"
+        },
+	    load: {
+            main: function($dashlet) {
+                one.lib.dashlet.empty($dashlet);
+                $dashlet.append(one.lib.dashlet.header(one.f.dashlet.activeNodes.name));
+                // TODO(l): Add a generic auto expand function to one.lib and replace custom height setting.
+                //$('#left-top').height('100%');
+                one.f.troubleshooting.activeNodes.ajax("/controller/web/flowstoragemanager/activenodes" , function(content) {
+                    var $gridHTML = one.lib.dashlet.datagrid.init(one.f.troubleshooting.activeNodes.id.activeNodesDataGrid, {
+                        searchable: true,
+                        filterable: false,
+                        pagination: true,
+                        flexibleRowsPerPage: true
+                        }, "table-striped table-condensed");
+                    $dashlet.append($gridHTML);
+                    var dataSource = one.f.troubleshooting.activeNodes.data.activeNodesGrid(content);
+                    $("#" + one.f.troubleshooting.activeNodes.id.activeNodesDataGrid).datagrid({dataSource: dataSource});
+                });
+            },
+            flows: function(nodeId) {
+                try {
+                    if(one.f.troubleshooting === undefined){
+                        return;
+                    }
+                    $.getJSON("/controller/web/flowstoragemanager/activeflowMatch?nodeId=" + nodeId, function(content) {
+                        $rightBottomDashlet = one.f.troubleshooting.rightBottomDashlet.get();
+                        one.f.troubleshooting.rightBottomDashlet.setDashletHeader("Flows");
+                        one.lib.dashlet.empty($rightBottomDashlet);
+                        $rightBottomDashlet.append(one.lib.dashlet.header("Flow Details"));
+                        var button = one.lib.dashlet.button.single("Refresh",
+                                one.f.troubleshooting.activeNodes.id.refreshFlowsButton, "btn-primary", "btn-mini");
+                        var $button = one.lib.dashlet.button.button(button);
+                        $button.click(function() {
+                            one.f.troubleshooting.activeNodes.load.flows(nodeId);
+                        });
+                        $rightBottomDashlet.append($button);
+                        var $gridHTML = one.lib.dashlet.datagrid.init(one.f.troubleshooting.activeNodes.id.flowsDataGrid, {
+                            searchable: true,
+                            filterable: false,
+                            pagination: true,
+                            flexibleRowsPerPage: true
+                            }, "table-striped table-condensed");
+                        $rightBottomDashlet.append($gridHTML);
+                        var dataSource = one.f.troubleshooting.activeNodes.data.flowsGrid(content);
+                        $("#" + one.f.troubleshooting.activeNodes.id.flowsDataGrid).datagrid({dataSource: dataSource});
+                    });
+                } catch(e) {}
+            }
+        },
+        ajax : function(url, callback) {
+            $.getJSON(url, function(data) {
+                callback(data);
+            });
+        },
+        registry: {},
+        modal : {},
+        data : {
+            activeNodesGrid: function(data) {
+                var source = new StaticDataSource({
+                    columns: [
+                        {
+                            property: 'nodeName',
+                            label: 'Name',
+                            sortable: true
+                        },
+                        {
+                            property: 'nodeId',
+                            label: 'Node ID',
+                            sortable: true
+                        },
+                        {
+                            property: 'statistics',
+                            label: 'Statistics',
+                            sortable: true
+                        }
+                    ],
+                    data: data.nodeData,
+                    formatter: function(items) {
+                        $.each(items, function(index, item) {
+                            item["statistics"] = "<a href=\"javascript:one.f.troubleshooting.activeNodes.load.flows('" + item["nodeId"] + "');\">Flows</a>";
+                        });
 
+                    },
+                    delay: 0
+                });
+                return source;
+            },
+            flowsGrid: function(data) {
+                var source = new StaticDataSource({
+                    columns: [
+                        {
+                            property: 'flowId',
+                            label: 'Flow ID',
+                            sortable: true
+                        },
+                        {
+                            property: 'nodeType',
+                            label: 'Node Type',
+                            sortable: true
+                        },
+                        {
+                            property: 'entryPriority',
+                            label: 'Entry Priority',
+                            sortable: true
+                        },
+                        {
+                            property: 'actions',
+                            label: 'Actions',
+                            sortable: true
+                        },
+                        {
+                            property: 'reason',
+                            label: 'Reason',
+                            sortable: true
+                        },
+                        {
+                            property: 'setupTime',
+                            label: 'Setup Time',
+                            sortable: true
+                        },
+                        {
+                            property: 'durationSeconds',
+                            label: 'Duration Seconds',
+                            sortable: true
+                        },
+                        {
+                            property: 'durationNanoseconds',
+                            label: 'Duration Nanoseconds',
+                            sortable: true
+                        },
+                        {
+                            property: 'recvPkts',
+                            label: 'Recv Pkts',
+                            sortable: true
+                        },
+                        {
+                            property: 'recvBytes',
+                            label: 'Recv Bytes',
+                            sortable: true
+                        },
+                        {
+                            property: 'idleTimeout',
+                            label: 'Idle Timeout',
+                            sortable: true
+                        },
+                        {
+                            property: 'hardTimeout',
+                            label: 'Hard Timeout',
+                            sortable: true
+                        },
+                        {
+                            property: 'cookie',
+                            label: 'Cookie',
+                            sortable: true
+                        },
+                        {
+                            property: 'inPort',
+                            label: 'In Port',
+                            sortable: true
+                        },
+                        {
+                            property: 'outPort',
+                            label: 'Out Port',
+                            sortable: true
+                        },
+                        {
+                            property: 'dlSrc',
+                            label: 'Dl Src',
+                            sortable: true
+                        },
+                        {
+                            property: 'dlDst',
+                            label: 'Dl Dst',
+                            sortable: true
+                        },
+                        {
+                            property: 'dlType',
+                            label: 'Dl Type',
+                            sortable: true
+                        },
+                        {
+                            property: 'dlVlan',
+                            label: 'Dl Vlan',
+                            sortable: true
+                        },
+                        {
+                            property: 'dlVlanPR',
+                            label: 'Dl Vlan PR',
+                            sortable: true
+                        },
+                        {
+                            property: 'nwSrc',
+                            label: 'Nw Src',
+                            sortable: true
+                        },
+                        {
+                            property: 'nwDst',
+                            label: 'Nw Dst',
+                            sortable: true
+                        },
+                        {
+                            property: 'nwProto',
+                            label: 'Nw Proto',
+                            sortable: true
+                        },
+                        {
+                            property: 'nwTos',
+                            label: 'Nw Tos',
+                            sortable: true
+                        },
+                        {
+                            property: 'tpSrc',
+                            label: 'Tp Src',
+                            sortable: true
+                        },
+                        {
+                            property: 'tpDst',
+                            label: 'Tp Dst',
+                            sortable: true
+                        }
+                    ],
+                    data: data.nodeData,
+                    delay: 0
+                });
+                return source;
+            },
+            flows: function(data) {
+                var result = [];
+                $.each(data.nodeData, function(key, value) {
+                    var tr = {};
+                    var entry = [];
+                    entry.push(value["flowId"]);
+                    entry.push(value["nodeType"]);
+                    entry.push(value["entryPriority"]);
+                    entry.push(value["actions"]);
+                    entry.push(value["reason"]);
+                    entry.push(value["setupTime"]);
+                    entry.push(value["durationSeconds"]);
+                    entry.push(value["durationNanoseconds"]);
+                    entry.push(value["recvPkts"]);
+                    entry.push(value["recvBytes"]);
+                    entry.push(value["idleTimeout"]);
+                    entry.push(value["hardTimeout"]);
+                    entry.push(value["cookie"]);
+                    entry.push(value["inPort"]);
+                    entry.push(value["outPort"]);
+                    entry.push(value["dlSrc"]);
+                    entry.push(value["dlDst"]);
+                    entry.push(value["dlType"]);
+                    entry.push(value["dlVlan"]);
+                    entry.push(value["dlVlanPR"]);
+                    entry.push(value["nwSrc"]);
+                    entry.push(value["nwDst"]);
+                    entry.push(value["nwProto"]);
+                    entry.push(value["nwTos"]);
+                    entry.push(value["tpSrc"]);
+                    entry.push(value["tpDst"]);
+                    tr.entry = entry;
+                    result.push(tr);
+                });
+                return result;
+            }
+        }
+};
+one.f.troubleshooting.inactiveNodes = {
+        id: {
+            popout: "one_f_troubleshooting_inactiveNodes_id_popout",
+            modal: "one_f_troubleshooting_inactiveNodes_id_modal",
+            inactiveNodesDataGrid: "one_f_troubleshooting_inactiveNodes_id_datagrid",
+            portsDataGrid: "one_f_troubleshooting_inactiveNodes_id_portsDataGrid",
+            flowsDataGrid: "one_f_troubleshooting_inactiveNodes_id_flowsDataGrid",
+            refreshFlowsButton:"one_f_troubleshooting_inactiveNodes_id_refreshFlowsButton",
+            refreshPortsButton:"one_f_troubleshooting_inactiveNodes_id_refreshPortsButton",
+            allnodes: "one_f_troubleshooting_inactiveNodes_id_allnodes"
+        },
+        load: {
+            main: function($dashlet) {
+                one.lib.dashlet.empty($dashlet);
+                $dashlet.append(one.lib.dashlet.header(one.f.dashlet.inactiveNodes.name));
+                // TODO(l): Add a generic auto expand function to one.lib and replace custom height setting.
+                //$('#left-top').height('100%');
+                one.f.troubleshooting.inactiveNodes.ajax("/controller/web/flowstoragemanager/inactivenodes" , function(content) {
+                    var $gridHTML = one.lib.dashlet.datagrid.init(one.f.troubleshooting.inactiveNodes.id.inactiveNodesDataGrid, {
+                        searchable: true,
+                        filterable: false,
+                        pagination: true,
+                        flexibleRowsPerPage: true
+                        }, "table-striped table-condensed");
+                    $dashlet.append($gridHTML);
+                    var dataSource = one.f.troubleshooting.inactiveNodes.data.inactiveNodesGrid(content);
+                    $("#" + one.f.troubleshooting.inactiveNodes.id.inactiveNodesDataGrid).datagrid({dataSource: dataSource});
+
+                });
+            },
+            flows: function(nodeId) {
+                try {
+                    if(one.f.troubleshooting === undefined){
+                        return;
+                    }
+                    $.getJSON("/controller/web/flowstoragemanager/inactiveflowMatch?nodeId=" + nodeId, function(content) {
+                        $rightBottomDashlet = one.f.troubleshooting.rightBottomDashlet.get();
+                        one.f.troubleshooting.rightBottomDashlet.setDashletHeader("Flows");
+                        one.lib.dashlet.empty($rightBottomDashlet);
+                        $rightBottomDashlet.append(one.lib.dashlet.header("Flow Details"));
+                        var button = one.lib.dashlet.button.single("Refresh",
+                                one.f.troubleshooting.inactiveNodes.id.refreshFlowsButton, "btn-primary", "btn-mini");
+                        var $button = one.lib.dashlet.button.button(button);
+                        $button.click(function() {
+                            one.f.troubleshooting.inactiveNodes.load.flows(nodeId);
+                        });
+                        $rightBottomDashlet.append($button);
+                        var $gridHTML = one.lib.dashlet.datagrid.init(one.f.troubleshooting.inactiveNodes.id.flowsDataGrid, {
+                            searchable: true,
+                            filterable: false,
+                            pagination: true,
+                            flexibleRowsPerPage: true
+                            }, "table-striped table-condensed");
+                        $rightBottomDashlet.append($gridHTML);
+                        var dataSource = one.f.troubleshooting.inactiveNodes.data.flowsGrid(content);
+                        $("#" + one.f.troubleshooting.inactiveNodes.id.flowsDataGrid).datagrid({dataSource: dataSource});
+                    });
+                } catch(e) {}
+            }
+        },
+        ajax : function(url, callback) {
+            $.getJSON(url, function(data) {
+                callback(data);
+            });
+        },
+        registry: {},
+        modal : {},
+        data : {
+            inactiveNodesGrid: function(data) {
+                var source = new StaticDataSource({
+                    columns: [
+                        {
+                            property: 'nodeName',
+                            label: 'Name',
+                            sortable: true
+                        },
+                        {
+                            property: 'nodeId',
+                            label: 'Node ID',
+                            sortable: true
+                        },
+                        {
+                            property: 'statistics',
+                            label: 'Statistics',
+                            sortable: true
+                        }
+                    ],
+                    data: data.nodeData,
+                    formatter: function(items) {
+                        $.each(items, function(index, item) {
+                            item["statistics"] = "<a href=\"javascript:one.f.troubleshooting.inactiveNodes.load.flows('" + item["nodeId"] + "');\">Flows</a>";
+                        });
+
+                    },
+                    delay: 0
+                });
+                return source;
+            },
+            flowsGrid: function(data) {
+                var source = new StaticDataSource({
+                    columns: [
+                        {
+                            property: 'flowId',
+                            label: 'Flow ID',
+                            sortable: true
+                        },
+                        {
+                            property: 'nodeType',
+                            label: 'Node Type',
+                            sortable: true
+                        },
+                        {
+                            property: 'entryPriority',
+                            label: 'Entry Priority',
+                            sortable: true
+                        },
+                        {
+                            property: 'actions',
+                            label: 'Actions',
+                            sortable: true
+                        },
+                        {
+                            property: 'reason',
+                            label: 'Reason',
+                            sortable: true
+                        },
+                        {
+                            property: 'setupTime',
+                            label: 'Setup Time',
+                            sortable: true
+                        },
+                        {
+                            property: 'durationSeconds',
+                            label: 'Duration Seconds',
+                            sortable: true
+                        },
+                        {
+                            property: 'durationNanoseconds',
+                            label: 'Duration Nanoseconds',
+                            sortable: true
+                        },
+                        {
+                            property: 'recvPkts',
+                            label: 'Recv Pkts',
+                            sortable: true
+                        },
+                        {
+                            property: 'recvBytes',
+                            label: 'Recv Bytes',
+                            sortable: true
+                        },
+                        {
+                            property: 'idleTimeout',
+                            label: 'Idle Timeout',
+                            sortable: true
+                        },
+                        {
+                            property: 'hardTimeout',
+                            label: 'Hard Timeout',
+                            sortable: true
+                        },
+                        {
+                            property: 'cookie',
+                            label: 'Cookie',
+                            sortable: true
+                        },
+                        {
+                            property: 'inPort',
+                            label: 'In Port',
+                            sortable: true
+                        },
+                        {
+                            property: 'outPort',
+                            label: 'Out Port',
+                            sortable: true
+                        },
+                        {
+                            property: 'dlSrc',
+                            label: 'Dl Src',
+                            sortable: true
+                        },
+                        {
+                            property: 'dlDst',
+                            label: 'Dl Dst',
+                            sortable: true
+                        },
+                        {
+                            property: 'dlType',
+                            label: 'Dl Type',
+                            sortable: true
+                        },
+                        {
+                            property: 'dlVlan',
+                            label: 'Dl Vlan',
+                            sortable: true
+                        },
+                        {
+                            property: 'dlVlanPR',
+                            label: 'Dl Vlan PR',
+                            sortable: true
+                        },
+                        {
+                            property: 'nwSrc',
+                            label: 'Nw Src',
+                            sortable: true
+                        },
+                        {
+                            property: 'nwDst',
+                            label: 'Nw Dst',
+                            sortable: true
+                        },
+                        {
+                            property: 'nwProto',
+                            label: 'Nw Proto',
+                            sortable: true
+                        },
+                        {
+                            property: 'nwTos',
+                            label: 'Nw Tos',
+                            sortable: true
+                        },
+                        {
+                            property: 'tpSrc',
+                            label: 'Tp Src',
+                            sortable: true
+                        },
+                        {
+                            property: 'tpDst',
+                            label: 'Tp Dst',
+                            sortable: true
+                        }
+                    ],
+                    data: data.nodeData,
+                    delay: 0
+                });
+                return source;
+            },
+            flows: function(data) {
+                var result = [];
+                $.each(data.nodeData, function(key, value) {
+                    var tr = {};
+                    var entry = [];
+                    entry.push(value["flowId"]);
+                    entry.push(value["nodeType"]);
+                    entry.push(value["entryPriority"]);
+                    entry.push(value["actions"]);
+                    entry.push(value["reason"]);
+                    entry.push(value["setupTime"]);
+                    entry.push(value["durationSeconds"]);
+                    entry.push(value["durationNanoseconds"]);
+                    entry.push(value["recvPkts"]);
+                    entry.push(value["recvBytes"]);
+                    entry.push(value["idleTimeout"]);
+                    entry.push(value["hardTimeout"]);
+                    entry.push(value["cookie"]);
+                    entry.push(value["inPort"]);
+                    entry.push(value["outPort"]);
+                    entry.push(value["dlSrc"]);
+                    entry.push(value["dlDst"]);
+                    entry.push(value["dlType"]);
+                    entry.push(value["dlVlan"]);
+                    entry.push(value["dlVlanPR"]);
+                    entry.push(value["nwSrc"]);
+                    entry.push(value["nwDst"]);
+                    entry.push(value["nwProto"]);
+                    entry.push(value["nwTos"]);
+                    entry.push(value["tpSrc"]);
+                    entry.push(value["tpDst"]);
+                    tr.entry = entry;
+                    result.push(tr);
+                });
+                return result;
+            }
+        }
+};
 one.f.troubleshooting.uptime = {
     id: {
         popout: "one_f_troubleshooting_uptime_id_popout",
@@ -504,7 +1070,7 @@ one.f.troubleshooting.uptime = {
             });
             return result;
         }
-    },
+    }
 };
 
 one.f.troubleshooting.statistics = {
@@ -545,6 +1111,12 @@ $('.dash .nav a', '#main').click(function() {
             break;
         case menu.flowsOrPorts.id:
             one.f.troubleshooting.statistics.dashlet($dashlet);
+            break;
+        case menu.activeNodes.id:
+            one.f.troubleshooting.activeNodes.load.main($dashlet);
+            break;
+        case menu.inactiveNodes.id:
+            one.f.troubleshooting.inactiveNodes.load.main($dashlet);
             break;
     };
 });

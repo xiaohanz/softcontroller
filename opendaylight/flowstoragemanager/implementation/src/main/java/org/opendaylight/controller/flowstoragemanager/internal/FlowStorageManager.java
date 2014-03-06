@@ -7,7 +7,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -44,8 +43,7 @@ public class FlowStorageManager implements
 
     private static final Logger log = LoggerFactory.getLogger(FlowStorageManager.class);
     private IFlowStorage dbstorage = null;
-    private static final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-    private static final Calendar calendar = Calendar.getInstance();
+    private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
     private static final String flowTblName = "flow";//flow table name
     private static final String matchTblName = "match";//match table name
     private static String actiontblname = "action";
@@ -69,7 +67,6 @@ public class FlowStorageManager implements
     private String matchTypesStr = null;
     private String matchValue =null;
     private String matchValueStr=null;
-    private String protocolTypeStr=null;
     private String protocolValueStr = "";
     private long reMatchId; //insert match table return this value
     private long reprotocolId;
@@ -130,9 +127,10 @@ public class FlowStorageManager implements
     }
 
     private String getSysTime(){
-        long now = System.currentTimeMillis();
-        calendar.setTimeInMillis(now);
-        return formatter.format(calendar.getTime());
+        Date date=new Date();
+        String time=null;
+        time= formatter.format(date);
+        return time;
     }
 
     private String generateAddMatchSql(){
@@ -295,7 +293,7 @@ public class FlowStorageManager implements
         protocolValueStr="";
         for(MatchType name : matchTypes){
             if(name.toString().equals("NW_PROTO")){
-                protocolTypeStr = name.toString();
+                name.toString();
             }
             else{
                 matchTypesStr += "," + name ;
