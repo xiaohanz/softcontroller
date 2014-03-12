@@ -232,8 +232,17 @@ public class FirewallNorthbound{
         if (frw == null) {
             throw new ServiceUnavailableException("Firewall " + RestMessages.SERVICEUNAVAILABLE.toString());
         }
-        Status status=frw.addRule(rule);
-            if(status.isSuccess()){
+        String installSoon=rule.getInstallSoon();
+        Status status=new Status(StatusCode.BADREQUEST,"not define whether install flowentry soon based on this rule");
+        if (installSoon==null){
+            return NorthboundUtils.getResponse(status);
+        }
+        if (installSoon.equals("1")){
+            status=frw.installRule(rule);
+        }else{
+            status=frw.addRule(rule);
+        }
+        if(status.isSuccess()){
               NorthboundUtils.auditlog("rule", username, "added", containerName);
               return Response.status(Response.Status.CREATED).entity("Success! FirewallRule created\n").build();
         }
