@@ -10,6 +10,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -146,6 +147,9 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         ruleConfig.setId(id);
         ruleConfig.setRuleId(ruleId);
         ruleConfig.setInstallHw("false");
+        if (ruleConfig.getStatus()==null){
+            ruleConfig.setStatus("1");
+        }
         ruleConfigList.put(ruleId, ruleConfig);
         id_ruleName.put(id, ruleConfig.getName());
         return new Status(StatusCode.SUCCESS);
@@ -179,6 +183,9 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         ruleConfig.setId(id);
         ruleConfig.setRuleId(ruleId);
         ruleConfig.setInstallHw("false");
+        if (ruleConfig.getStatus()==null){
+            ruleConfig.setStatus("1");
+        }
         ruleConfigList.put(ruleId, ruleConfig);
         id_ruleName.put(id, ruleConfig.getName());
         return id;
@@ -234,7 +241,13 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         id_ruleName.remove(id);
         String installHw=mapRule.getInstallHw();
         if(installHw!=null&&installHw.equalsIgnoreCase("true")){
-            List<FlowEntry> flowEntry=frm.getFlowEntriesForGroup("FirewallRule");
+            String installStatus=mapRule.getInstallSoon();
+            List<FlowEntry> flowEntry;
+            if (installStatus.equals("1")){
+                flowEntry=frm.getFlowEntriesForGroup("FirewallRuleInstall");
+            }else{
+                flowEntry=frm.getFlowEntriesForGroup("FirewallRule");
+            }
             if(flowEntry!=null){
                 for (FlowEntry entry : flowEntry){
                     String fName=entry.getFlowName();
@@ -489,6 +502,9 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         FirewallRule matched_rule=null;
         for (Entry<String, FirewallRule> firewallRule : ruleConfigList.entrySet()) {
             FirewallRule conf = firewallRule.getValue();
+            if (conf.getStatus().equals("0")){
+                continue;
+            }
             boolean nodeEqual=true;
             Node ruleNode =conf.getNode();
             IPv4 pkt = (IPv4)formattedPak.getPayload();
@@ -820,6 +836,67 @@ public class Firewall implements IFirewall, IObjectReader, IConfigurationContain
         default:
             return;
         }
+    }
+    @Override
+    public Status installRule(FirewallRule rule) {
+        // add a new rule and install rule in switch
+        if (rule==null||!this.isEnabled()){
+            return new Status(StatusCode.BADREQUEST,"rule is null or firewall disabled");
+        }
+        String hIp=rule.getNwSrc();
+        if (hIp==null){
+            return new Status(StatusCode.BADREQUEST,"srcIp should not be null");
+        }
+        InetAddress ip = NetUtils.parseInetAddress(hIp);
+        HostNodeConnector host=hostTracker.hostFind(ip);
+        if (host==null){
+            return new Status(StatusCode.INTERNALERROR,"can not find host of ip "+hIp);
+        }
+        Match match = new Match();
+        match.setField(MatchType.NW_SRC, ip);
+        if (rule.getEtherType() != null) {
+            match.setField(MatchType.DL_TYPE, Integer.decode(rule.getEtherType())
+                    .shortValue());
+        }
+        List<Action> actionList = new ArrayList<Action>();
+        if (rule.getAction().equalsIgnoreCase("deny")){
+            actionList.add(new Drop());
+        }else{
+            return new Status(StatusCode.BADREQUEST,"action should be 'DENY'");
+        }
+        Flow flow = new Flow(match, actionList);
+        flow.setMatch(match);
+        flow.setActions(actionList);
+        String group = "FirewallRuleInstall";
+        Random rd = new Random();
+        String str = String.valueOf(rd.nextInt(512));
+        String id=String.valueOf(rd.nextInt(100));
+        String ruleId=id+"_"+rule.getName();
+        rule.setId(id);
+        rule.setRuleId(ruleId);
+        rule.setInstallHw("true");
+        String name = ruleId + "_" + str;
+        if (rule.getStatus()==null){
+            rule.setStatus("1");
+        }
+        ruleConfigList.put(ruleId, rule);
+        id_ruleName.put(id, rule.getName());
+        String priority="65535";
+        flow.setPriority(Integer.decode(priority).shortValue());
 
+        FlowEntry flowentry=new FlowEntry(group, name, flow,
+                host.getnodeconnectorNode());
+        Status status = this.frm.installFlowEntry(flowentry);
+        if (!status.isSuccess()) {
+            log.error("Failed to install policy: "
+                    + flowentry.getGroupName() + " ("
+                    + status.getDescription() + ")");
+            return new Status(StatusCode.NOTIMPLEMENTED, "Install flowentry Refused");
+        } else {
+            log.debug("Successfully installed policy "
+                    + flowentry.toString() + " on switch " + flowentry.getNode().getNodeIDString());
+            ruleConfigList.get(rule.getRuleId()).setInstallHw("true");
+        }
+        return new Status(StatusCode.SUCCESS);
     }
 }
