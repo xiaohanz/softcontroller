@@ -13,9 +13,14 @@ import org.slf4j.LoggerFactory;
 
 public class Dbclient implements IFlowStorage{
         private Connection conn = null;
-        private static final String url = "jdbc:mysql://localhost:3306/bnc?user=root&password=hou&useUnicode=true&&characterEncoding=gb2312&autoReconnect = true";
+        private static String port = System.getProperty("DBport");
+        private static String DBname = System.getProperty("DBname");
+        private static String username = System.getProperty("username");
+        private static String password = System.getProperty("password");
+        private static String characterEncoding = System.getProperty("characterEncoding");
+        private static String driver = System.getProperty("driver");
+        private static final String url = "jdbc:mysql://localhost:"+port+"/"+DBname+"?user="+username+"&password="+password+"&useUnicode=true&&characterEncoding="+characterEncoding+"&autoReconnect = true";
         private String user = null;
-        private String password = null;
         private static final Logger log = LoggerFactory.getLogger(Dbclient.class);
         /**
          * Function called by the dependency manager when all the required
@@ -25,7 +30,7 @@ public class Dbclient implements IFlowStorage{
         void init() {
             try {
                 //java.sql.DriverManager.registerDriver(new Driver());
-                Class.forName("com.mysql.jdbc.Driver").newInstance();
+                Class.forName(driver).newInstance();
                 System.out.println("********************"+'\n'+'\n'+'\n'+'\n');
                 try {
                     if(conn == null){
@@ -178,8 +183,6 @@ public class Dbclient implements IFlowStorage{
         //connect to mySql server
         public Connection connectDb(){
             try {
-                 user = "root";
-                 password = "hou";
                  conn = DriverManager.getConnection(url,user,password);
             } catch (SQLException e) {
                 System.out.println("Database connection load failure");

@@ -98,11 +98,10 @@ one.main.page = {
     delete one.f;
     $('.dashlet', '#main').empty();
     $('.nav', '#main').empty();
-    // fetch page's js
-    $.getScript(one.main.constants.address.prefix+"/"+page+"/js/page.js")
-      .success(function() {
-        one.main.menu.registry.load = false;
-      });
+    var jsEl=document.createElement("script");
+           jsEl.src=one.main.constants.address.prefix+"/"+page+"/js/page.js";
+           document.body.appendChild(jsEl);
+           one.main.menu.registry.load = false;
 
     $.ajaxSetup({
       data : {
@@ -143,7 +142,7 @@ one.main.admin = {
         password : 'one_main_admin_id_modal_remove_password'
       },
       modify : {
-          user : "one_main_admin_id_modal_modify_user",
+          user : "one_main_admin_id_modal_modify_user"
       },
       password : {
         modal : 'one_main_admin_id_modal_password_modal',
@@ -306,7 +305,7 @@ one.main.admin = {
         $.post(one.main.admin.address.root + one.main.admin.address.users + '/' + id, function(data) {
           callback(data);
         });
-      },
+      }
     },
     footer : function() {
       var footer = [];
@@ -332,7 +331,7 @@ one.main.admin = {
       var $p = $(document.createElement('p'));
       $p.append('Select an action');
       return $p;
-    },
+    }
   },
   add : {
     modal : {

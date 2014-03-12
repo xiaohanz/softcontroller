@@ -90,6 +90,7 @@
     <module>opendaylight/web/troubleshoot</module>
     <module>opendaylight/web/topology</module>
     <module>opendaylight/web/osgi-brandfragment</module>
+    <module>opendaylight/web/flowstoragemanager</module>
 
     <!--  Neutron -->
     <module>opendaylight/networkconfiguration/neutron</module>

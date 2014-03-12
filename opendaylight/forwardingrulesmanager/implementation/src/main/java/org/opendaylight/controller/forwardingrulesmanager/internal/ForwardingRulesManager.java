@@ -28,8 +28,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.opendaylight.controller.flowstoragemanager.IFlowUpdateListener;
-import org.opendaylight.controller.forwardingrulesmanager.IReceiveflowid;
 import org.opendaylight.controller.clustering.services.CacheConfigException;
 import org.opendaylight.controller.clustering.services.CacheExistException;
 import org.opendaylight.controller.clustering.services.ICacheUpdateAware;
@@ -38,11 +36,13 @@ import org.opendaylight.controller.clustering.services.IClusterServices;
 import org.opendaylight.controller.configuration.IConfigurationContainerAware;
 import org.opendaylight.controller.connectionmanager.IConnectionManager;
 import org.opendaylight.controller.containermanager.IContainerManager;
+import org.opendaylight.controller.flowstoragemanager.IFlowUpdateListener;
 import org.opendaylight.controller.forwardingrulesmanager.FlowConfig;
 import org.opendaylight.controller.forwardingrulesmanager.FlowEntry;
 import org.opendaylight.controller.forwardingrulesmanager.FlowEntryInstall;
 import org.opendaylight.controller.forwardingrulesmanager.IForwardingRulesManager;
 import org.opendaylight.controller.forwardingrulesmanager.IForwardingRulesManagerAware;
+import org.opendaylight.controller.forwardingrulesmanager.IReceiveflowid;
 import org.opendaylight.controller.forwardingrulesmanager.PortGroup;
 import org.opendaylight.controller.forwardingrulesmanager.PortGroupChangeListener;
 import org.opendaylight.controller.forwardingrulesmanager.PortGroupConfig;
@@ -65,6 +65,7 @@ import org.opendaylight.controller.sal.flowprogrammer.IFlowProgrammerListener;
 import org.opendaylight.controller.sal.flowprogrammer.IFlowProgrammerService;
 import org.opendaylight.controller.sal.match.Match;
 import org.opendaylight.controller.sal.match.MatchType;
+import org.opendaylight.controller.sal.reader.FlowOnNode;
 import org.opendaylight.controller.sal.utils.EtherTypes;
 import org.opendaylight.controller.sal.utils.GlobalConstants;
 import org.opendaylight.controller.sal.utils.IObjectReader;
@@ -73,6 +74,7 @@ import org.opendaylight.controller.sal.utils.ObjectWriter;
 import org.opendaylight.controller.sal.utils.ServiceHelper;
 import org.opendaylight.controller.sal.utils.Status;
 import org.opendaylight.controller.sal.utils.StatusCode;
+import org.opendaylight.controller.statisticsmanager.IStatisticsManager;
 import org.opendaylight.controller.switchmanager.IInventoryListener;
 import org.opendaylight.controller.switchmanager.ISwitchManager;
 import org.opendaylight.controller.switchmanager.ISwitchManagerAware;
@@ -109,17 +111,32 @@ public class ForwardingRulesManager implements
     private ConcurrentMap<String, PortGroupConfig> portGroupConfigs;
     private ConcurrentMap<PortGroupConfig, Map<Node, PortGroup>> portGroupData;
     private ConcurrentMap<String, Object> TSPolicies;
+    private ConcurrentMap<Integer, Object[]> updataflow1;
+    private ConcurrentMap<Integer, Object[]> updataflow2;
     private IContainerManager containerManager;
     private boolean inContainerMode; // being used by global instance only
     protected boolean stopping;
-    public long flowid;
+    public int flowid;
+    private int switchs = 0;
+    private Object[] fromstatistic = new Object[4];
+    private Object[] frommsg = new Object[4];
     private IFlowUpdateListener flowstoremgr;
-    void setIFlowUpdateListenerService (IFlowUpdateListener storemgr){
+    private IStatisticsManager statistics;
+    private List<FlowEntry> flowList = new ArrayList<FlowEntry>();
+    void setIFlowUpdateListener (IFlowUpdateListener storemgr){
         flowstoremgr = storemgr;
     }
-    void unIFlowUpdateListenerService (IFlowUpdateListener storemgr){
+    void unIFlowUpdateListener (IFlowUpdateListener storemgr){
         if(flowstoremgr == storemgr){
             flowstoremgr = null;
+        }
+    }
+    void setIStatisticsManager (IStatisticsManager statistic){
+        statistics = statistic;
+    }
+    void unIStatisticsManager (IStatisticsManager statistic){
+        if(statistics == statistic){
+            statistics = null;
         }
     }
     /*
@@ -710,9 +727,23 @@ public class ForwardingRulesManager implements
             }
             return retStatus;
         } else {
+            //get flow statistic before the entry to be deleted
+            List<FlowOnNode> entrystatistic = getflowstatistic(entry.getInstall());
+            if(entrystatistic.size() != 0){
+                long bytecount = entrystatistic.get(0).getByteCount();
+                long packetcount = entrystatistic.get(0).getPacketCount();
+                int seconds = entrystatistic.get(0).getDurationSeconds();
+                int nseconds = entrystatistic.get(0).getDurationNanoseconds();
+                int id = entry.getInstall().hashCode();
+                fromstatistic[0] = bytecount;
+                fromstatistic[1] = packetcount;
+                fromstatistic[2] = seconds;
+                fromstatistic[3] = nseconds;
+                int key = 1;
+                this.deleteFlow(key, id);
+            }
             // Mark the entry to be deleted (for CC just in case we fail)
             entry.toBeDeleted();
-
             // Remove from node
             Status status = async ? programmer.removeFlowAsync(entry.getNode(), entry.getInstall()
                     .getFlow()) : programmer.removeFlow(entry.getNode(), entry.getInstall()
@@ -844,6 +875,12 @@ public class ForwardingRulesManager implements
             originalSwView.remove(flowEntries.getOriginal());
             installedSwView.remove(flowEntries);
         }
+    }
+    public  List<FlowOnNode> getflowstatistic(FlowEntry flowEntries){
+        flowList.add(flowEntries);
+        Node nodes = flowEntries.getNode();
+        List<FlowOnNode> statistic = statistics.getFlows(nodes);
+        return statistic;
     }
 
     /*
@@ -2470,7 +2507,8 @@ public class ForwardingRulesManager implements
 
         nodeFlows = new ConcurrentHashMap<Node, List<FlowEntryInstall>>();
         groupFlows = new ConcurrentHashMap<String, List<FlowEntryInstall>>();
-
+        updataflow1 = new ConcurrentHashMap<Integer, Object[]>();
+        updataflow2 = new ConcurrentHashMap<Integer, Object[]>();
         cacheStartup();
 
         /*
@@ -2907,12 +2945,13 @@ public class ForwardingRulesManager implements
     @Override
     public void flowRemoved(Node node, Flow flow) {
         log.trace("Received flow removed notification on {} for {}", node, flow);
-
+        int keys = 2;
         // For flow entry identification, only node, match and priority matter
         FlowEntryInstall test = new FlowEntryInstall(new FlowEntry("", "", flow, node), null);
         FlowEntryInstall installedEntry = this.installedSwView.get(test);
         if (installedEntry == null) {
             flowid = test.getInstall().hashCode();
+            deleteFlow(keys, flowid);
             log.trace("Entry is not known to us");
             return;
         }
@@ -2937,10 +2976,54 @@ public class ForwardingRulesManager implements
 
         // Update software views
         flowid = installedEntry.getInstall().hashCode();
+        deleteFlow(keys,flowid);
         this.updateSwViews(installedEntry, false);
     }
-    public long sendflowid (){
-        return this.flowid;
+    public void sendFlowId (Object[] array){
+        frommsg = array;
+    }
+    public void deleteFlow (int key, int flowid){
+        int keys = key;
+        int id = flowid;
+        Object[] statistic = new Object[4];
+        if(keys == 1){
+            statistic = fromstatistic;
+        }else{
+            statistic = frommsg;
+        }
+        if(switchs == 0){
+            if(updataflow1.size() != 4){
+                    if(keys != 1){
+                        updataflow1.replace(id, statistic);
+                    }else{
+                        updataflow1.put(id, statistic);
+                    }
+            }else{
+                if(keys != 1){
+                    updataflow1.replace(id, statistic);
+                }
+                switchs = 1;
+                updataflow2.put(id, statistic);
+                flowstoremgr.updateFlowEntry(updataflow1);
+                updataflow1.clear();
+            }
+        }else{
+            if(updataflow2.size() != 4){
+                    if(keys != 1){
+                        updataflow2.replace(id, statistic);
+                    }else{
+                        updataflow2.put(id, statistic);
+                    }
+            }else{
+                if(keys != 1){
+                    updataflow2.replace(id, statistic);
+                }
+                switchs = 0;
+                updataflow1.put(id, statistic);
+                flowstoremgr.updateFlowEntry(updataflow2);
+                updataflow2.clear();
+            }
+        }
     }
 
     @Override
