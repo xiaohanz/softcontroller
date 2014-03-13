@@ -47,6 +47,7 @@ one.f.address = {
     firewalls : {
         main : "/main",
         firewall : "/firewall",
+        firewallInstall : "/firewall/install",
         modifyFirewall : "/modifyFirewall",
         deleteFirewalls:"/firewall/deleteFirewalls",
         setStatus : "/setStatus",
@@ -485,6 +486,11 @@ one.f.firewalls = {
                 callback(data);
             });
         },
+        installfirewall : function(resource, callback) {
+            $.post(one.f.address.root+one.f.address.firewalls.firewallInstall, resource, function(data) {
+                callback(data);
+            });
+        },
         togglefirewall : function(ids, firewallStatus,callback) {
             resource = {};
             resource['firewallListIds'] = ids;
@@ -575,8 +581,16 @@ one.f.firewalls = {
 
             // bind edit firewall button
             $('#'+one.f.firewalls.id.modal.edit, $modal).click(function() {
-                one.f.firewalls.modal.save($modal,edit);
+            	one.f.firewalls.modal.save($modal,false,edit);
             });
+            // bind install firewall button
+            $('#'+one.f.firewalls.id.modal.install, $modal).click(function() {
+                one.f.firewalls.modal.save($modal, true,edit);
+            });
+            
+//            $('#'+one.f.firewalls.id.modal.edit, $modal).click(function() {
+//                one.f.firewalls.modal.save($modal,edit);
+//            });
 
             var nodes = one.f.firewalls.registry.nodes;
             var etherTypes = one.f.firewalls.registry.etherTypes;
@@ -825,7 +839,7 @@ one.f.firewalls = {
              $form.append($fieldset);
              return $form;
     	},
-	    save : function($modal,edit){
+	    save : function($modal,install,edit){
 	        var result = {};
 	        result['id'] = $('#'+one.f.firewalls.id.modal.form.id, $modal).val();
 	        result['name'] = $('#'+one.f.firewalls.id.modal.form.name, $modal).val();
@@ -870,9 +884,8 @@ one.f.firewalls = {
 	        var resource = {};
 	        resource['body'] = JSON.stringify(result);
 	        resource['nodeId'] = nodeId;
-	        
 	        if(edit) {
-	        	one.f.firewalls.ajax.savefirewall(resource, function(data){
+	            one.f.firewalls.ajax.savefirewall(resource, function(data){
 	        		if (data == "Success") {
 	                    $modal.modal('hide').on('hidden', function () {
 	                        one.f.firewalls.detail(result['id']);
@@ -883,23 +896,44 @@ one.f.firewalls = {
 	        		}else{
 	        			alert('Could not add firewall: '+data);
 	        		}
-	        	});
-	        } else {
-	        	one.f.firewalls.ajax.savefirewall(resource, function(data){
+	            });
+	        }else{
+	        	if(install) {
+	            one.f.firewalls.ajax.installfirewall(resource, function(data){
 	        		if (data == "Success") {
-	        			$modal.modal('hide');
-	        			one.lib.alert('Firewall Entry added');
-	        			one.main.dashlet.left.top.empty();
-	        			one.f.firewalls.dashlet(one.main.dashlet.left.top);
-	        		} else {
+	                    $modal.modal('hide').on('hidden', function () {
+	                        one.f.firewalls.detail(result['id']);
+	                    });
+	                    one.lib.alert('Firewall Entry added');
+	                    one.main.dashlet.left.top.empty();
+	                    one.f.firewalls.dashlet(one.main.dashlet.left.top);
+	        		}else{
 	        			alert('Could not add firewall: '+data);
 	        		}
-	        	});
+	            });	        	
+	        	}else{
+	        		
+	            one.f.firewalls.ajax.savefirewall(resource, function(data){
+	        		if (data == "Success") {
+	                    $modal.modal('hide').on('hidden', function () {
+	                        one.f.firewalls.detail(result['id']);
+	                    });
+	                    one.lib.alert('Firewall Entry added');
+	                    one.main.dashlet.left.top.empty();
+	                    one.f.firewalls.dashlet(one.main.dashlet.left.top);
+	        		}else{
+	        			alert('Could not add firewall: '+data);
+	        		}
+	            });
+	        	}
 	        }
 	    },
 	    
         footer : function() {
             var footer = [];
+            var installButton = one.lib.dashlet.button.single("Install FirewallRule", one.f.firewalls.id.modal.install, "btn-success", "");
+            var $installButton = one.lib.dashlet.button.button(installButton);
+            footer.push($installButton);
 
             var editButton = one.lib.dashlet.button.single("Save Firewall", one.f.firewalls.id.modal.edit, "btn-success", "");
             var $editButton = one.lib.dashlet.button.button(editButton);
@@ -910,7 +944,7 @@ one.f.firewalls = {
             footer.push($closeButton);
 
             return footer;
-        },
+        }
     },
     data : {
         firewallsDataGrid: function(data) {

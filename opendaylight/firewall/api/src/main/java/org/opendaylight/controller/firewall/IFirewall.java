@@ -20,6 +20,12 @@ public interface IFirewall {
      */
     public Status addRule(FirewallRule rule);
     /**
+     * add a new rule and install firewall rule to switch
+     * @param rule
+     * @return
+     */
+    public Status installRule(FirewallRule rule);
+    /**
      * get all firewallRule ConfigList
      * @return
      */
